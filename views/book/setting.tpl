@@ -32,6 +32,7 @@
                     <li><a href="{{urlfor "BookController.Dashboard" ":key" .Model.Identify}}" class="item"><i class="fa fa-dashboard" aria-hidden="true"></i> 概要</a> </li>
                     <li><a href="{{urlfor "BookController.Users" ":key" .Model.Identify}}" class="item"><i class="fa fa-users" aria-hidden="true"></i> 成员</a> </li>
                     <li class="active"><a href="{{urlfor "BookController.Setting" ":key" .Model.Identify}}" class="item"><i class="fa fa-gear" aria-hidden="true"></i> 设置</a> </li>
+                    <li><a href="{{urlfor "BookController.Links" ":key" .Model.Identify}}" class="item"><i class="fa fa-book" aria-hidden="true"></i> 链接</a> </li>
                 </ul>
 
             </div>

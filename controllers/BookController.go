@@ -473,7 +473,7 @@ func (c *BookController) Create() {
 			}
 		}
 
-		if books, _ := book.FindByField("identify", identify,"book_id"); len(books) > 0 {
+		if books, _ := book.FindByField("identify", identify, "book_id"); len(books) > 0 {
 			c.JsonResult(6006, "项目标识已存在")
 		}
 
@@ -547,7 +547,7 @@ func (c *BookController) Import() {
 		c.JsonResult(6004, "不支持的文件类型")
 	}
 
-	if books, _ := models.NewBook().FindByField("identify", identify,"book_id"); len(books) > 0 {
+	if books, _ := models.NewBook().FindByField("identify", identify, "book_id"); len(books) > 0 {
 		c.JsonResult(6006, "项目标识已存在")
 	}
 
@@ -576,7 +576,6 @@ func (c *BookController) Import() {
 
 	book.Editor = "markdown"
 	book.Theme = "default"
-
 
 	go book.ImportBook(tempPath)
 
@@ -793,4 +792,43 @@ func (c *BookController) IsPermission() (*models.BookResult, error) {
 		return book, errors.New("权限不足")
 	}
 	return book, nil
+}
+
+// Links 用户列表.
+func (c *BookController) Links() {
+	c.Prepare()
+	c.TplName = "book/links.tpl"
+
+	key := c.Ctx.Input.Param(":key")
+	pageIndex, _ := c.GetInt("page", 1)
+
+	if key == "" {
+		c.Abort("404")
+	}
+
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	if err != nil {
+		if err == models.ErrPermissionDenied {
+			c.Abort("403")
+		}
+		c.Abort("500")
+	}
+
+	c.Data["Model"] = *book
+
+	members, totalCount, err := models.NewMemberRelationshipResult().FindForUsersByBookId(book.BookId, pageIndex, 15)
+
+	if totalCount > 0 {
+		pager := pagination.NewPagination(c.Ctx.Request, totalCount, conf.PageSize, c.BaseUrl())
+		c.Data["PageHtml"] = pager.HtmlPages()
+	} else {
+		c.Data["PageHtml"] = ""
+	}
+	b, err := json.Marshal(members)
+
+	if err != nil {
+		c.Data["Result"] = template.JS("[]")
+	} else {
+		c.Data["Result"] = template.JS(string(b))
+	}
 }
