@@ -749,11 +749,12 @@ func (book *Book) FindLinksToPager(pageIndex, pageSize, bookId int) (books []*Bo
 
 	o := orm.NewOrm()
 
-	sql1 := "SELECT COUNT(book.book_id) AS total_count FROM " + book.TableNameWithPrefix() + " WHERE link_id = ? "
+	sql1 := "SELECT COUNT(book_id) AS total_count FROM " + book.TableNameWithPrefix() + " WHERE link_id = ? "
 
 	err = o.Raw(sql1, bookId).QueryRow(&totalCount)
 
 	if err != nil {
+		logs.Error("FindLinksToPager => ", err)
 		return
 	}
 
@@ -767,7 +768,7 @@ func (book *Book) FindLinksToPager(pageIndex, pageSize, bookId int) (books []*Bo
 
 	_, err = o.Raw(sql2, bookId).QueryRows(&books)
 	if err != nil {
-		logs.Error("分页查询项目列表 => ", err)
+		logs.Error("FindLinksToPager => ", err)
 		return
 	}
 	sql := "SELECT m.account,doc.modify_time FROM md_documents AS doc LEFT JOIN md_members AS m ON doc.modify_at=m.member_id WHERE book_id = ? LIMIT 1 ORDER BY doc.modify_time DESC"

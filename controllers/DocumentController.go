@@ -4,18 +4,19 @@ import (
 	"container/list"
 	"encoding/json"
 	"html/template"
+	"image/png"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"net/url"
-	"image/png"
 
 	"bytes"
 
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
@@ -24,10 +25,9 @@ import (
 	"github.com/lifei6671/mindoc/conf"
 	"github.com/lifei6671/mindoc/models"
 	"github.com/lifei6671/mindoc/utils"
+	"github.com/lifei6671/mindoc/utils/cryptil"
 	"github.com/lifei6671/mindoc/utils/pagination"
 	"gopkg.in/russross/blackfriday.v2"
-	"github.com/lifei6671/mindoc/utils/cryptil"
-	"fmt"
 )
 
 // DocumentController struct
@@ -59,17 +59,17 @@ func (c *DocumentController) Index() {
 	selected := 0
 
 	if bookResult.IsUseFirstDocument {
-		doc,err := bookResult.FindFirstDocumentByBookId(bookResult.BookId)
+		doc, err := bookResult.FindFirstDocumentByBookId(bookResult.BookId)
 		if err == nil {
 			if strings.TrimSpace(doc.Release) != "" {
-				doc.Release += "<div class=\"wiki-bottom\">文档更新时间: " + doc.ModifyTime.Local().Format("2006-01-02 15:04") + "</div>";
+				doc.Release += "<div class=\"wiki-bottom\">文档更新时间: " + doc.ModifyTime.Local().Format("2006-01-02 15:04") + "</div>"
 			}
 			selected = doc.DocumentId
 			c.Data["Title"] = doc.DocumentName
 			c.Data["Content"] = template.HTML(doc.Release)
 
 		}
-	}else {
+	} else {
 		c.Data["Title"] = "概要"
 		c.Data["Content"] = template.HTML(blackfriday.Run([]byte(bookResult.Description)))
 	}
@@ -108,7 +108,7 @@ func (c *DocumentController) Read() {
 
 	bookResult := isReadable(identify, token, c)
 
-	c.TplName = fmt.Sprintf("document/%s_read.tpl",bookResult.Theme)
+	c.TplName = fmt.Sprintf("document/%s_read.tpl", bookResult.Theme)
 
 	doc := models.NewDocument()
 
@@ -119,14 +119,18 @@ func (c *DocumentController) Read() {
 			c.Abort("500")
 		}
 	} else {
-		doc, err = doc.FromCacheByIdentify(id,bookResult.BookId)
+		if bookResult.LinkId == 0 {
+			doc, err = doc.FromCacheByIdentify(id, bookResult.BookId)
+		} else {
+			doc, err = doc.FromCacheByIdentify(id, bookResult.LinkId)
+		}
 		if err != nil {
 			beego.Error(err)
 			c.Abort("500")
 		}
 	}
 
-	if doc.BookId != bookResult.BookId {
+	if doc.BookId != bookResult.BookId || doc.BookId != bookResult.LinkId {
 		c.Abort("403")
 	}
 
@@ -170,10 +174,9 @@ func (c *DocumentController) Read() {
 		docInfo += "；更新于 "
 		docInfo += doc.ModifyTime.Local().Format("2006-01-02 15:04")
 		if strings.TrimSpace(doc.Release) != "" {
-			doc.Release += "<div class=\"wiki-bottom\">文档更新时间: " + doc.ModifyTime.Local().Format("2006-01-02 15:04") + "</div>";
+			doc.Release += "<div class=\"wiki-bottom\">文档更新时间: " + doc.ModifyTime.Local().Format("2006-01-02 15:04") + "</div>"
 		}
 	}
-
 
 	if c.IsAjax() {
 		var data struct {
@@ -287,7 +290,6 @@ func (c *DocumentController) Create() {
 		c.JsonResult(6004, "文档名称不能为空")
 	}
 
-
 	bookId := 0
 
 	// 如果是超级管理员则不判断权限
@@ -315,7 +317,7 @@ func (c *DocumentController) Create() {
 			c.JsonResult(6003, "文档标识只能包含小写字母、数字，以及“-”、“.”和“_”符号")
 		}
 
-		d, _ := models.NewDocument().FindByIdentityFirst(docIdentify,bookId)
+		d, _ := models.NewDocument().FindByIdentityFirst(docIdentify, bookId)
 		if d.DocumentId > 0 && d.DocumentId != docId {
 			c.JsonResult(6006, "文档标识已被使用")
 		}
@@ -437,7 +439,7 @@ func (c *DocumentController) Upload() {
 
 	fileName := "attach_" + strconv.FormatInt(time.Now().UnixNano(), 16)
 
-	filePath := filepath.Join(conf.WorkingDirectory, "uploads", time.Now().Format("200601"),identify, fileName+ext)
+	filePath := filepath.Join(conf.WorkingDirectory, "uploads", time.Now().Format("200601"), identify, fileName+ext)
 
 	path := filepath.Dir(filePath)
 
@@ -786,6 +788,7 @@ func (c *DocumentController) Content() {
 
 	c.JsonResult(0, "ok", doc)
 }
+
 //
 //func (c *DocumentController) GetDocumentById(id string) (doc *models.Document, err error) {
 //	doc = models.NewDocument()
@@ -835,7 +838,7 @@ func (c *DocumentController) Export() {
 		bookResult = isReadable(identify, token, c)
 	}
 	if !bookResult.IsDownload {
-		c.ShowErrorPage(200,"当前项目没有开启导出功能")
+		c.ShowErrorPage(200, "当前项目没有开启导出功能")
 	}
 
 	if !strings.HasPrefix(bookResult.Cover, "http:://") && !strings.HasPrefix(bookResult.Cover, "https:://") {
@@ -843,13 +846,13 @@ func (c *DocumentController) Export() {
 	}
 
 	if output == "markdown" {
-		if bookResult.Editor != "markdown"{
-			c.ShowErrorPage(500,"当前项目不支持Markdown编辑器")
+		if bookResult.Editor != "markdown" {
+			c.ShowErrorPage(500, "当前项目不支持Markdown编辑器")
 		}
-		p,err := bookResult.ExportMarkdown(c.CruSession.SessionID())
+		p, err := bookResult.ExportMarkdown(c.CruSession.SessionID())
 
 		if err != nil {
-			c.ShowErrorPage(500,"导出文档失败")
+			c.ShowErrorPage(500, "导出文档失败")
 		}
 		c.Ctx.Output.Download(p, bookResult.BookName+".zip")
 
@@ -880,8 +883,8 @@ func (c *DocumentController) Export() {
 		c.Ctx.Output.Download(eBookResult.WordPath, bookResult.BookName+".docx")
 
 		c.Abort("200")
-	}else{
-		c.ShowErrorPage(200,"不支持的文件格式")
+	} else {
+		c.ShowErrorPage(200, "不支持的文件格式")
 	}
 
 	c.Abort("404")
@@ -1265,7 +1268,6 @@ func EachFun(prefix, dpath string, c *DocumentController, book *models.BookResul
 	f.Close()
 }
 
-
 // 判断用户是否可以阅读文档
 func isReadable(identify, token string, c *DocumentController) *models.BookResult {
 	book, err := models.NewBook().FindByFieldFirst("identify", identify)
@@ -1337,6 +1339,6 @@ func promptUserToLogIn(c *DocumentController) {
 	if c.IsAjax() {
 		c.JsonResult(6000, "请重新登录。")
 	} else {
-		c.Redirect(conf.URLFor("AccountController.Login")+ "?url=" + url.PathEscape(conf.BaseUrl+ c.Ctx.Request.URL.RequestURI()), 302)
+		c.Redirect(conf.URLFor("AccountController.Login")+"?url="+url.PathEscape(conf.BaseUrl+c.Ctx.Request.URL.RequestURI()), 302)
 	}
 }

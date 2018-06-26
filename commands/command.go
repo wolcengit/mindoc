@@ -29,6 +29,8 @@ import (
 
 // RegisterDataBase 注册数据库
 func RegisterDataBase() {
+	orm.Debug = true
+
 	beego.Info("正在初始化数据库配置.")
 	adapter := beego.AppConfig.String("db_adapter")
 

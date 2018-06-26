@@ -420,6 +420,7 @@ func (c *BookController) Create() {
 		description := strings.TrimSpace(c.GetString("description", ""))
 		privatelyOwned, _ := strconv.Atoi(c.GetString("privately_owned"))
 		comment_status := c.GetString("comment_status")
+		link_id, _ := strconv.Atoi(c.GetString("link_id", "0"))
 
 		if book_name == "" {
 			c.JsonResult(6001, "项目名称不能为空")
@@ -494,6 +495,9 @@ func (c *BookController) Create() {
 
 		book.Editor = "markdown"
 		book.Theme = "default"
+
+		book.LinkId = link_id
+		book.LinkDoc = ""
 
 		if err := book.Insert(); err != nil {
 			logs.Error("Insert => ", err)
@@ -808,6 +812,7 @@ func (c *BookController) Links() {
 
 	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
 	if err != nil {
+		logs.Error("BookController.Links => ", err)
 		if err == models.ErrPermissionDenied {
 			c.Abort("403")
 		}
@@ -816,7 +821,18 @@ func (c *BookController) Links() {
 
 	c.Data["Model"] = *book
 
-	members, totalCount, err := models.NewMemberRelationshipResult().FindForUsersByBookId(book.BookId, pageIndex, 15)
+	books, totalCount, err := models.NewBook().FindLinksToPager(pageIndex, conf.PageSize, book.BookId)
+
+	if err != nil {
+		logs.Error("BookController.Links => ", err)
+		c.Abort("500")
+	}
+
+	for i, book := range books {
+		books[i].Description = utils.StripTags(string(blackfriday.Run([]byte(book.Description))))
+		books[i].ModifyTime = book.ModifyTime.Local()
+		books[i].CreateTime = book.CreateTime.Local()
+	}
 
 	if totalCount > 0 {
 		pager := pagination.NewPagination(c.Ctx.Request, totalCount, conf.PageSize, c.BaseUrl())
@@ -824,7 +840,7 @@ func (c *BookController) Links() {
 	} else {
 		c.Data["PageHtml"] = ""
 	}
-	b, err := json.Marshal(members)
+	b, err := json.Marshal(books)
 
 	if err != nil {
 		c.Data["Result"] = template.JS("[]")
