@@ -1,0 +1,49 @@
+
+强制删除仓库，重新fork，真不好玩，重新修改加入自己的功能，可惜历史没有了，不过也算是一次次重构了。
+后续这样玩
+每次自己分支修改，master随时和上游同步，一旦变动大了，再来一个分支，哈哈。
+
+
+
+dnf -y install mysql
+dnf -y install mariadb-server
+systemctl start mariadb
+systemctl enable  mariadb
+/usr/bin/mysql_secure_installation
+mysql -uroot -ppw@123456 -e"CREATE DATABASE mindoc_db  DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci;"
+
+
+cd /root/gopath
+mkdir -p src/github.com/lifei6671
+cd  src/github.com/lifei6671
+git clone https://github.com/wolcengit/mindoc.git
+
+
+mkdir /root/gopath/bin
+curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
+cd /root/gopath/src/github.com/lifei6671/mindoc
+dep ensure
+
+cd /root/gopath/src
+go get github.com/PuerkitoBio/goquery
+go get github.com/astaxie/beego
+go get github.com/boombuler/barcode
+go get github.com/go-sql-driver/mysql
+go get github.com/kardianos/service
+go get github.com/mattn/go-sqlite3
+go get github.com/lifei6671/gocaptcha
+go get github.com/bradfitz/gomemcache
+go get github.com/nfnt/resize
+go get gopkg.in/ldap.v2
+
+go get github.com/garyburd/redigo
+go get github.com/garyburd/redigo/redis
+go get github.com/bradfitz/gomemcache/memcache
+go get gopkg.in/russross/blackfriday.v2
+mkdir -p golang.org/x
+cd  golang.org/x
+git clone https://github.com/golang/net.git
+git clone https://github.com/golang/image.git
+
+
