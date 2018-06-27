@@ -28,16 +28,26 @@ type DocumentSelected struct {
 func (m *Document) FindDocumentTree(bookId int) ([]*DocumentTree, error) {
 	o := orm.NewOrm()
 
+	book, _ := NewBook().Find(bookId)
 	trees := make([]*DocumentTree, 0)
 
 	var docs []*Document
+	var count int64
 
-	count, err := o.QueryTable(m).Filter("book_id", bookId).OrderBy("order_sort", "document_id").Limit(math.MaxInt32).All(&docs, "document_id", "version", "document_name", "parent_id", "identify")
-
-	if err != nil {
-		return trees, err
+	if book.LinkId > 0 {
+		sql := "SELECT * FROM md_documents WHERE book_id = ? AND FIND_IN_SET(document_id,?)>0 ORDER BY order_sort,document_id "
+		count1, err := o.Raw(sql, book.LinkId, book.LinkDoc).QueryRows(&docs)
+		if err != nil {
+			return trees, err
+		}
+		count = count1
+	} else {
+		count1, err := o.QueryTable(m).Filter("book_id", bookId).OrderBy("order_sort", "document_id").Limit(math.MaxInt32).All(&docs, "document_id", "version", "document_name", "parent_id", "identify")
+		if err != nil {
+			return trees, err
+		}
+		count = count1
 	}
-	book, _ := NewBook().Find(bookId)
 
 	trees = make([]*DocumentTree, count)
 

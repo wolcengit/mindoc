@@ -28,6 +28,10 @@
             <div class="page-left">
                 <ul class="menu">
                     <li class="active"><a href="{{urlfor "BookController.Index"}}" class="item"><i class="fa fa-sitemap" aria-hidden="true"></i> 我的项目</a> </li>
+                    <li><a href="{{urlfor "SettingController.Index"}}" class="item"><i class="fa fa-sitemap" aria-hidden="true"></i> 基本信息</a> </li>
+                {{if ne .Member.AuthMethod "ldap"}}
+                    <li><a href="{{urlfor "SettingController.Password"}}" class="item"><i class="fa fa-user" aria-hidden="true"></i> 修改密码</a> </li>
+                {{end}}
                 </ul>
             </div>
             <div class="page-right">

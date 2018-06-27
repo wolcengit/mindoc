@@ -499,6 +499,11 @@ func (c *BookController) Create() {
 		book.LinkId = link_id
 		book.LinkDoc = ""
 
+		if link_id > 0 {
+			book.Editor = "link"
+			book.IsUseFirstDocument = 0
+		}
+
 		if err := book.Insert(); err != nil {
 			logs.Error("Insert => ", err)
 			c.JsonResult(6005, "保存项目失败")

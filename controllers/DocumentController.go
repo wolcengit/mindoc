@@ -130,7 +130,7 @@ func (c *DocumentController) Read() {
 		}
 	}
 
-	if doc.BookId != bookResult.BookId || doc.BookId != bookResult.LinkId {
+	if (bookResult.LinkId == 0 && doc.BookId != bookResult.BookId) || (bookResult.LinkId > 0 && doc.BookId != bookResult.LinkId) {
 		c.Abort("403")
 	}
 
@@ -245,6 +245,8 @@ func (c *DocumentController) Edit() {
 		c.TplName = "document/markdown_edit_template.tpl"
 	} else if bookResult.Editor == "html" {
 		c.TplName = "document/new_html_edit_template.tpl"
+	} else if bookResult.Editor == "link" {
+		c.TplName = "document/link_edit_template.tpl"
 	} else {
 		c.TplName = "document/" + bookResult.Editor + "_edit_template.tpl"
 	}
@@ -272,6 +274,41 @@ func (c *DocumentController) Edit() {
 	}
 
 	c.Data["BaiDuMapKey"] = beego.AppConfig.DefaultString("baidumapkey", "")
+
+	if bookResult.Editor == "link" {
+		if c.Ctx.Input.IsPost() {
+			link_docs := strings.TrimSpace(c.GetString("link_docs", ""))
+			o := orm.NewOrm()
+			slink := link_docs
+			for {
+				doclinks := slink
+				slink = ""
+				var docs []*models.Document
+				sql := "SELECT * FROM md_documents WHERE FIND_IN_SET(document_id,?)>0 "
+				_, err = o.Raw(sql, doclinks).QueryRows(&docs)
+				for _, doc := range docs {
+					if doc.ParentId > 0 && !strings.Contains(","+link_docs+",", ","+strconv.Itoa(doc.ParentId)+",") {
+						link_docs += strconv.Itoa(doc.ParentId) + ","
+						slink += strconv.Itoa(doc.ParentId) + ","
+					}
+				}
+				if slink == "" {
+					break
+				}
+			}
+			o.Raw("UPDATE md_books SET link_doc = ? WHERE book_id = ?", link_docs, bookResult.BookId).Exec()
+
+		}
+
+		doclinks, docs, err := models.NewDocument().GetLinkBookDocuments(bookResult.BookId)
+		if err != nil {
+			beego.Error(err)
+			c.Abort("500")
+		}
+		c.Data["LinkDocLinks"] = doclinks
+		c.Data["LinkDocResult"] = template.HTML(docs)
+	}
+
 }
 
 // 创建一个文档

@@ -59,7 +59,7 @@
                                     </div>
                                     <div class="pull-right">
                                         <div class="btn-group">
-                                            <a href="{{urlfor "DocumentController.Edit" ":key" $item.Identify ":id" ""}}" class="btn btn-default" target="_blank">编辑</a>
+                                            <a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}"  class="btn btn-default" >设置</a>
                                             <a href="javascript:;" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 <span class="caret"></span>
                                                 <span class="sr-only">Toggle Dropdown</span>
@@ -67,7 +67,7 @@
 
                                             <ul class="dropdown-menu">
                                                 <li><a href="{{urlfor "DocumentController.Index" ":key" $item.Identify}}" target="_blank">阅读</a></li>
-                                                <li><a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}">设置</a></li>
+                                                <li><a href="{{urlfor "DocumentController.Edit" ":key" $item.Identify ":id" ""}}" target="_blank">编辑</a></li>
                                                 <li><a href="javascript:deleteBook('{{$item.BookId}}');">删除</a> </li>
                                             </ul>
                                         </div>
