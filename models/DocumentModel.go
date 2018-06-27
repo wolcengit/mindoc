@@ -215,10 +215,14 @@ func (m *Document) FromCacheByIdentify(identify string, bookId int) (*Document, 
 }
 
 //根据项目ID查询文档列表.
-func (m *Document) FindListByBookId(bookId int) (docs []*Document, err error) {
+func (m *Document) FindListByBookId(bookId int, linkId int, linkDoc string) (docs []*Document, err error) {
 	o := orm.NewOrm()
-
-	_, err = o.QueryTable(m.TableNameWithPrefix()).Filter("book_id", bookId).OrderBy("order_sort").All(&docs)
+	if linkId == 0 {
+		_, err = o.QueryTable(m.TableNameWithPrefix()).Filter("book_id", bookId).OrderBy("order_sort").All(&docs)
+	} else {
+		sql := "SELECT * FROM md_documents WHERE book_id = ? AND FIND_IN_SET(document_id,?)>0 ORDER BY order_sort,document_id "
+		_, err = o.Raw(sql, linkId, linkDoc).QueryRows(&docs)
+	}
 
 	return
 }

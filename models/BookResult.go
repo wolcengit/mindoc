@@ -247,7 +247,7 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		return convertBookResult, nil
 	}
 
-	docs, err := NewDocument().FindListByBookId(m.BookId)
+	docs, err := NewDocument().FindListByBookId(m.BookId, m.LinkId, m.LinkDoc)
 	if err != nil {
 		return convertBookResult, err
 	}
