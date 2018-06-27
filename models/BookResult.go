@@ -183,11 +183,11 @@ func (m *BookResult) ToBookResult(book Book) *BookResult {
 	m.Editor = book.Editor
 	m.Theme = book.Theme
 	m.AutoRelease = book.AutoRelease == 1
-	m.IsEnableShare = book.IsEnableShare == 0
+	m.IsEnableShare = book.IsEnableShare == 1
 	m.IsUseFirstDocument = book.IsUseFirstDocument == 1
 	m.Publisher = book.Publisher
 	m.HistoryCount = book.HistoryCount
-	m.IsDownload = book.IsDownload == 0
+	m.IsDownload = book.IsDownload == 1
 	m.LinkId = book.LinkId
 	m.LinkDoc = book.LinkDoc
 
