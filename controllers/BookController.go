@@ -83,6 +83,10 @@ func (c *BookController) Dashboard() {
 		c.Abort("500")
 	}
 
+	if book.LinkId > 0 {
+		book.DocCount = strings.Count(book.LinkDoc, ",")
+	}
+
 	c.Data["Description"] = template.HTML(blackfriday.Run([]byte(book.Description)))
 	c.Data["Model"] = *book
 }

@@ -191,6 +191,10 @@ func (m *BookResult) ToBookResult(book Book) *BookResult {
 	m.LinkId = book.LinkId
 	m.LinkDoc = book.LinkDoc
 
+	if !strings.HasPrefix(book.LinkDoc, ",") {
+		book.LinkDoc = "," + book.LinkDoc
+	}
+
 	if book.Theme == "" {
 		m.Theme = "default"
 	}

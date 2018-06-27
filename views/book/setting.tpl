@@ -86,6 +86,7 @@
                                 <input type="text" class="form-control" name="label" placeholder="项目标签" value="{{.Model.Label}}">
                                 <p class="text">最多允许添加10个标签，多个标签请用“,”分割</p>
                             </div>
+                            {{if eq .Model.LinkId 0 }}
                             <div class="form-group">
                                 <label>编辑器</label>
                                 <div class="radio">
@@ -97,6 +98,7 @@
                                     </label>
                                 </div>
                             </div>
+                            {{end}}
                             <!--
                             {{/*
                             <div class="form-group">
@@ -157,6 +159,7 @@
                         </div>
                     </div>
                 </div>
+                {{if eq .Model.LinkId 0 }}
                 <div class="form-group">
                     <label for="autoRelease">设置第一篇文档为默认首页</label>
                     <div class="controls">
@@ -165,6 +168,7 @@
                         </div>
                     </div>
                 </div>
+                {{end}}
                 <div class="form-group">
                     <button type="submit" id="btnSaveBookInfo" class="btn btn-success" data-loading-text="保存中...">保存修改</button>
                     <span id="form-error-message" class="error-message"></span>
