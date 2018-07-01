@@ -42,6 +42,10 @@
                         <button type="button" data-toggle="modal" data-target="#addBookDialogModal" class="btn btn-success btn-sm pull-right">添加项目</button>
                         <button type="button" data-toggle="modal" data-target="#importBookDialogModal" class="btn btn-primary btn-sm pull-right" style="margin-right: 5px;">导入项目</button>
                     </div>
+                    <ul class="nav nav-tabs" style="margin-top: 15px;">
+                        <li {{if eq .Owner 0}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?owner=0">创建的项目</a></li>
+                        <li {{if eq .Owner 1}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?owner=1">参与的项目</a></li>
+                    </ul>
                 </div>
                 <div class="box-body" id="bookList">
                     <div class="book-list">

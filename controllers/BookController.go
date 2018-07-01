@@ -33,9 +33,12 @@ func (c *BookController) Index() {
 	c.Prepare()
 	c.TplName = "book/index.tpl"
 
+	owner, _ := c.GetInt("owner", 0) //是否是自己创建
+	c.Data["Owner"] = owner
+
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId)
+	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId, owner)
 
 	if err != nil {
 		logs.Error("BookController.Index => ", err)
