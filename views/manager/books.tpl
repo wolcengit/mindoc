@@ -48,7 +48,7 @@
                         <div class="list-item">
                                 <div class="book-title">
                                     <div class="pull-left">
-                                        <a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}" title="编辑项目" data-toggle="tooltip">
+                                        <a href="{{urlfor "BookController.Dashboard" ":key" $item.Identify}}" title="编辑项目" data-toggle="tooltip">
                                             {{if eq $item.PrivatelyOwned 0}}
                                             <i class="fa fa-unlock" aria-hidden="true"></i>
                                             {{else}}
@@ -59,7 +59,7 @@
                                     </div>
                                     <div class="pull-right">
                                         <div class="btn-group">
-                                            <a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}"  class="btn btn-default" >设置</a>
+                                            <a href="{{urlfor "BookController.Dashboard" ":key" $item.Identify}}"  class="btn btn-default" >设置</a>
                                             <a href="javascript:;" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 <span class="caret"></span>
                                                 <span class="sr-only">Toggle Dropdown</span>

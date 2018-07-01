@@ -83,12 +83,25 @@ func (m *BookResult) FindByIdentify(identify string, memberId int) (*BookResult,
 		return m, err
 	}
 
+	member0, err := NewMember().Find(memberId)
+	if err != nil {
+		return m, err
+	}
+
 	relationship := NewRelationship()
 
 	err = o.QueryTable(relationship.TableNameWithPrefix()).Filter("book_id", book.BookId).Filter("member_id", memberId).One(relationship)
-
-	if err != nil {
-		return m, err
+	if !member0.IsAdministrator() {
+		if err != nil {
+			return m, err
+		}
+	} else {
+		if err != nil {
+			relationship = NewRelationship()
+			relationship.BookId = book.BookId
+			relationship.MemberId = memberId
+			relationship.RoleId = conf.BookAdmin
+		}
 	}
 	var relationship2 Relationship
 
