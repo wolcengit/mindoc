@@ -5,4 +5,4 @@ LABEL author="wolcen@msn.com"
 ADD zmindoc /zmindoc/
 
 EXPOSE 8181
-#ENTRYPOINT [ "/zmindoc/mindoc"]
+ENTRYPOINT [ "/zmindoc/mindoc"]
