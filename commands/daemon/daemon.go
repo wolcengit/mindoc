@@ -5,10 +5,13 @@ import (
 	"os"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/orm"
 	"github.com/kardianos/service"
 	"github.com/lifei6671/mindoc/commands"
 	"github.com/lifei6671/mindoc/conf"
 	"github.com/lifei6671/mindoc/controllers"
+	"github.com/lifei6671/mindoc/models"
+	"time"
 )
 
 type Daemon struct {
@@ -50,6 +53,8 @@ func (d *Daemon) Run() {
 	beego.ErrorController(&controllers.ErrorController{})
 
 	fmt.Printf("MinDoc version => %s\nbuild time => %s\nstart directory => %s\n%s\n", conf.VERSION, conf.BUILD_TIME, os.Args[0], conf.GO_VERSION)
+
+	firstMindoc()
 
 	beego.Run()
 }
@@ -116,4 +121,59 @@ func Restart() {
 		beego.Info("Service Restart!")
 	}
 	os.Exit(0)
+}
+func firstMindoc() {
+
+	fmt.Println("Initializing...")
+
+	err := orm.RunSyncdb("default", false, true)
+	if err != nil {
+		panic(err.Error())
+		os.Exit(1)
+	}
+	fmt.Println("Install Successfully!")
+	err = models.NewOption().Init()
+
+	if err != nil {
+		panic(err.Error())
+		os.Exit(1)
+	}
+
+	member, err := models.NewMember().FindByFieldFirst("account", "admin")
+	if err == orm.ErrNoRows {
+
+		member.Account = "admin"
+		member.Avatar = "/static/images/headimgurl.jpg"
+		member.Password = "123456"
+		member.AuthMethod = "local"
+		member.Role = 0
+		member.Email = "admin@iminho.me"
+
+		if err := member.Add(); err != nil {
+			panic("Member.Add => " + err.Error())
+			os.Exit(0)
+		}
+
+		book := models.NewBook()
+
+		book.MemberId = member.MemberId
+		book.BookName = "MinDoc演示项目"
+		book.Status = 0
+		book.Description = "这是一个MinDoc演示项目，该项目是由系统初始化时自动创建。"
+		book.CommentCount = 0
+		book.PrivatelyOwned = 0
+		book.CommentStatus = "closed"
+		book.Identify = "mindoc"
+		book.DocCount = 0
+		book.CommentCount = 0
+		book.Version = time.Now().Unix()
+		book.Cover = conf.GetDefaultCover()
+		book.Editor = "markdown"
+		book.Theme = "default"
+
+		if err := book.Insert(); err != nil {
+			panic("Book.Insert => " + err.Error())
+			os.Exit(0)
+		}
+	}
 }
