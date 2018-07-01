@@ -3,6 +3,14 @@
 后续这样玩
 每次自己分支修改，master随时和上游同步，一旦变动大了，再来一个分支，哈哈。
 
+项目完全Docker化,使用如下：
+1、使用sqlite3
+  docker run -d -p 8181:8181 wolcen/mindoc
+
+2、使用MySQL
+   创建一个配置app.conf
+  docker run -d -p 8181:8181 -v /my/app.conf:/zmindoc/conf/app.conf wolcen/mindoc
+
 
 
 dnf -y install mysql
@@ -45,14 +53,4 @@ mkdir -p golang.org/x
 cd  golang.org/x
 git clone https://github.com/golang/net.git
 git clone https://github.com/golang/image.git
-
-FROM ubuntu:17.10
-LABEL author="wolcen@msn.com"
-RUN apt-get update -y \
-  && apt-get install -y calibre \
-  && apt-get clean \
-  && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
-ADD mindoc.tgz /
-ENTRYPOINT [ "/mindoc/mindoc"]
-
 
