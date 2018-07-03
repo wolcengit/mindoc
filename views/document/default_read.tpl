@@ -131,7 +131,7 @@
             </div>
             <div class="m-copyright">
                 <p>
-                    本文档使用 <a href="https://www.iminho.me" target="_blank">MinDoc</a> 发布
+                    本文档使用 <a href="https://github.com/wolcengit/mindoc" target="_blank">Z-MinDoc</a> 发布
                 </p>
             </div>
         </div>
