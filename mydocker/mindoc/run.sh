@@ -1,4 +1,5 @@
 #!/bin/bash
+TAG="$1"
 export SRC_HOME=../..
 # 准备
 cp -rf $SRC_HOME/lib zmindoc/
@@ -9,7 +10,7 @@ cp -rf $SRC_HOME/README.md zmindoc/
 cp -rf $SRC_HOME/favicon.ico zmindoc/
 cp -rf $SRC_HOME/mindoc zmindoc/
 # 创建
-docker build -t wolcen/mindoc .
+docker build -t wolcen/mindoc:$TAG .
 # 清理
 rm -rf zmindoc/lib
 rm -rf zmindoc/static
@@ -18,4 +19,6 @@ rm -rf zmindoc/LICENSE.md
 rm -rf zmindoc/README.md
 rm -rf zmindoc/favicon.ico
 rm -rf zmindoc/mindoc
+
+docker push wolcen/mindoc:$TAG
 
