@@ -144,7 +144,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="autoRelease">开启导出</label>
+                    <label for="isDownload">开启导出</label>
                     <div class="controls">
                         <div class="switch switch-small" data-on="primary" data-off="info">
                             <input type="checkbox" id="isDownload" name="is_download"{{if .Model.IsDownload }} checked{{end}} data-size="small" placeholder="开启导出">
@@ -152,7 +152,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="autoRelease">开启分享</label>
+                    <label for="enableShare">开启分享</label>
                     <div class="controls">
                         <div class="switch switch-small" data-on="primary" data-off="info">
                             <input type="checkbox" id="enableShare" name="enable_share"{{if .Model.IsEnableShare }} checked{{end}} data-size="small" placeholder="开启分享">
@@ -161,7 +161,7 @@
                 </div>
                 {{if eq .Model.LinkId 0 }}
                 <div class="form-group">
-                    <label for="autoRelease">设置第一篇文档为默认首页</label>
+                    <label for="is_use_first_document">设置第一篇文档为默认首页</label>
                     <div class="controls">
                         <div class="switch switch-small" data-on="primary" data-off="info">
                             <input type="checkbox" id="is_use_first_document" name="is_use_first_document"{{if .Model.IsUseFirstDocument }} checked{{end}} data-size="small" placeholder="设置第一篇文档为默认首页">

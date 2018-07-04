@@ -175,7 +175,10 @@ func (c *BookController) SaveBook() {
 	book.Label = tag
 	book.Editor = editor
 	book.HistoryCount = historyCount
+	book.AutoRelease = 1
 	book.IsDownload = 0
+	book.IsEnableShare = 0
+	book.IsUseFirstDocument = 0
 
 	if autoRelease {
 		book.AutoRelease = 1
@@ -183,14 +186,14 @@ func (c *BookController) SaveBook() {
 		book.AutoRelease = 0
 	}
 	if isDownload {
-		book.IsDownload = 0
-	} else {
 		book.IsDownload = 1
+	} else {
+		book.IsDownload = 0
 	}
 	if enableShare {
-		book.IsEnableShare = 0
-	} else {
 		book.IsEnableShare = 1
+	} else {
+		book.IsEnableShare = 0
 	}
 	if isUseFirstDocument {
 		book.IsUseFirstDocument = 1
@@ -496,9 +499,9 @@ func (c *BookController) Create() {
 		book.CommentCount = 0
 		book.Version = time.Now().Unix()
 		book.IsEnableShare = 0
-		book.IsUseFirstDocument = 1
-		book.IsDownload = 1
-		book.AutoRelease = 0
+		book.IsUseFirstDocument = 0
+		book.IsDownload = 0
+		book.AutoRelease = 1
 
 		book.Editor = "markdown"
 		book.Theme = "default"
