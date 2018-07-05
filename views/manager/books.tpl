@@ -40,6 +40,10 @@
                     <div class="box-head">
                         <strong class="box-title">项目列表</strong>
                     </div>
+                    <ul class="nav nav-tabs" style="margin-top: 15px;">
+                        <li {{if eq .Linked 0}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?linked=0">基本项目</a></li>
+                        <li {{if eq .Linked 1}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?linked=1">链接项目</a></li>
+                    </ul>
                 </div>
                 <div class="box-body" id="bookList">
                     <div class="book-list">
