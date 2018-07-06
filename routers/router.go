@@ -90,4 +90,6 @@ func init() {
 
 	beego.Router("/tag/:key", &controllers.LabelController{}, "get:Index")
 	beego.Router("/tags", &controllers.LabelController{}, "get:List")
+
+	beego.Router("/mindoc/rest", &controllers.MinDocRestController{}, "post:PostContent")
 }
