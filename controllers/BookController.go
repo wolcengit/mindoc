@@ -33,9 +33,12 @@ func (c *BookController) Index() {
 	c.Prepare()
 	c.TplName = "book/index.tpl"
 
+	owner, _ := c.GetInt("owner", 0) //是否是自己创建
+	c.Data["Owner"] = owner
+
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId)
+	books, totalCount, err := models.NewBook().FindToPagerByOwner(pageIndex, conf.PageSize, c.Member.MemberId, owner)
 
 	if err != nil {
 		logs.Error("BookController.Index => ", err)
@@ -81,6 +84,10 @@ func (c *BookController) Dashboard() {
 		}
 		beego.Error(err)
 		c.Abort("500")
+	}
+
+	if book.LinkId > 0 {
+		book.DocCount = strings.Count(book.LinkDoc, ",")
 	}
 
 	c.Data["Description"] = template.HTML(blackfriday.Run([]byte(book.Description)))
@@ -168,7 +175,10 @@ func (c *BookController) SaveBook() {
 	book.Label = tag
 	book.Editor = editor
 	book.HistoryCount = historyCount
+	book.AutoRelease = 1
 	book.IsDownload = 0
+	book.IsEnableShare = 0
+	book.IsUseFirstDocument = 0
 
 	if autoRelease {
 		book.AutoRelease = 1
@@ -176,14 +186,14 @@ func (c *BookController) SaveBook() {
 		book.AutoRelease = 0
 	}
 	if isDownload {
-		book.IsDownload = 0
-	} else {
 		book.IsDownload = 1
+	} else {
+		book.IsDownload = 0
 	}
 	if enableShare {
-		book.IsEnableShare = 0
-	} else {
 		book.IsEnableShare = 1
+	} else {
+		book.IsEnableShare = 0
 	}
 	if isUseFirstDocument {
 		book.IsUseFirstDocument = 1
@@ -420,6 +430,7 @@ func (c *BookController) Create() {
 		description := strings.TrimSpace(c.GetString("description", ""))
 		privatelyOwned, _ := strconv.Atoi(c.GetString("privately_owned"))
 		commentStatus := c.GetString("comment_status")
+		link_id, _ := strconv.Atoi(c.GetString("link_id", "0"))
 
 		if bookName == "" {
 			c.JsonResult(6001, "项目名称不能为空")
@@ -488,12 +499,20 @@ func (c *BookController) Create() {
 		book.CommentCount = 0
 		book.Version = time.Now().Unix()
 		book.IsEnableShare = 0
-		book.IsUseFirstDocument = 1
-		book.IsDownload = 1
-		book.AutoRelease = 0
+		book.IsUseFirstDocument = 0
+		book.IsDownload = 0
+		book.AutoRelease = 1
 
 		book.Editor = "markdown"
 		book.Theme = "default"
+
+		book.LinkId = link_id
+		book.LinkDoc = ""
+
+		if link_id > 0 {
+			book.Editor = "link"
+			book.IsUseFirstDocument = 0
+		}
 
 		if err := book.Insert(); err != nil {
 			logs.Error("Insert => ", err)
@@ -818,4 +837,55 @@ func (c *BookController) IsPermission() (*models.BookResult, error) {
 		return book, errors.New("权限不足")
 	}
 	return book, nil
+}
+
+// Links 用户列表.
+func (c *BookController) Links() {
+	c.Prepare()
+	c.TplName = "book/links.tpl"
+
+	key := c.Ctx.Input.Param(":key")
+	pageIndex, _ := c.GetInt("page", 1)
+
+	if key == "" {
+		c.Abort("404")
+	}
+
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	if err != nil {
+		logs.Error("BookController.Links => ", err)
+		if err == models.ErrPermissionDenied {
+			c.Abort("403")
+		}
+		c.Abort("500")
+	}
+
+	c.Data["Model"] = *book
+
+	books, totalCount, err := models.NewBook().FindLinksToPager(pageIndex, conf.PageSize, book.BookId)
+
+	if err != nil {
+		logs.Error("BookController.Links => ", err)
+		c.Abort("500")
+	}
+
+	for i, book := range books {
+		books[i].Description = utils.StripTags(string(blackfriday.Run([]byte(book.Description))))
+		books[i].ModifyTime = book.ModifyTime.Local()
+		books[i].CreateTime = book.CreateTime.Local()
+	}
+
+	if totalCount > 0 {
+		pager := pagination.NewPagination(c.Ctx.Request, totalCount, conf.PageSize, c.BaseUrl())
+		c.Data["PageHtml"] = pager.HtmlPages()
+	} else {
+		c.Data["PageHtml"] = ""
+	}
+	b, err := json.Marshal(books)
+
+	if err != nil {
+		c.Data["Result"] = template.JS("[]")
+	} else {
+		c.Data["Result"] = template.JS(string(b))
+	}
 }

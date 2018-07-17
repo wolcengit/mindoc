@@ -46,7 +46,9 @@
                 <span style="font-size: 12px;font-weight: 100;"></span>
             </div>
             <div class="navbar-header pull-right manual-menu">
+                {{if .Model.IsDownload}}
                 <a href="javascript:window.print();" id="printSinglePage" class="btn btn-default" style="margin-right: 10px;"><i class="fa fa-print"></i> 打印</a>
+                {{end}}
                 {{if gt .Member.MemberId 0}}
                 {{if gt .Model.RelationshipId 0}}
                 {{if eq .Model.RoleId 0 1 2}}
@@ -131,7 +133,7 @@
             </div>
             <div class="m-copyright">
                 <p>
-                    本文档使用 <a href="https://www.iminho.me" target="_blank">MinDoc</a> 发布
+                    本文档使用 <a href="https://github.com/wolcengit/mindoc" target="_blank">Z-MinDoc</a> 发布
                 </p>
             </div>
         </div>

@@ -40,6 +40,10 @@
                     <div class="box-head">
                         <strong class="box-title">项目列表</strong>
                     </div>
+                    <ul class="nav nav-tabs" style="margin-top: 15px;">
+                        <li {{if eq .Linked 0}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?linked=0">基本项目</a></li>
+                        <li {{if eq .Linked 1}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?linked=1">链接项目</a></li>
+                    </ul>
                 </div>
                 <div class="box-body" id="bookList">
                     <div class="book-list">
@@ -48,7 +52,7 @@
                         <div class="list-item">
                                 <div class="book-title">
                                     <div class="pull-left">
-                                        <a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}" title="编辑项目" data-toggle="tooltip">
+                                        <a href="{{urlfor "BookController.Dashboard" ":key" $item.Identify}}" title="编辑项目" data-toggle="tooltip">
                                             {{if eq $item.PrivatelyOwned 0}}
                                             <i class="fa fa-unlock" aria-hidden="true"></i>
                                             {{else}}
@@ -59,7 +63,7 @@
                                     </div>
                                     <div class="pull-right">
                                         <div class="btn-group">
-                                            <a href="{{urlfor "DocumentController.Edit" ":key" $item.Identify ":id" ""}}" class="btn btn-default" target="_blank">编辑</a>
+                                            <a href="{{urlfor "BookController.Dashboard" ":key" $item.Identify ":id" ""}}" class="btn btn-default" target="_blank">设置</a>
                                             <a href="javascript:;" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 <span class="caret"></span>
                                                 <span class="sr-only">Toggle Dropdown</span>
@@ -67,7 +71,7 @@
 
                                             <ul class="dropdown-menu">
                                                 <li><a href="{{urlfor "DocumentController.Index" ":key" $item.Identify}}" target="_blank">阅读</a></li>
-                                                <li><a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}">设置</a></li>
+                                                <li><a href="{{urlfor "DocumentController.Edit" ":key" $item.Identify}}">编辑</a></li>
                                                 <li><a href="javascript:deleteBook('{{$item.BookId}}');">删除</a> </li>
                                             </ul>
                                         </div>

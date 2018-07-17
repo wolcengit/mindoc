@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"html/template"
+
+	"bytes"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 	"github.com/lifei6671/mindoc/cache"
@@ -90,15 +93,15 @@ func (m *Document) InsertOrUpdate(cols ...string) error {
 		if m.Identify == "" {
 			book := NewBook()
 			identify := "docs"
-			if err := o.QueryTable(book.TableNameWithPrefix()).Filter("book_id",m.BookId).One(book,"identify");err == nil {
+			if err := o.QueryTable(book.TableNameWithPrefix()).Filter("book_id", m.BookId).One(book, "identify"); err == nil {
 				identify = book.Identify
 			}
 
-			m.Identify = fmt.Sprintf("%s-%s",identify,strconv.FormatInt(time.Now().UnixNano(), 32))
+			m.Identify = fmt.Sprintf("%s-%s", identify, strconv.FormatInt(time.Now().UnixNano(), 32))
 		}
 
-		if m.OrderSort == 0{
-			sort,_ := o.QueryTable(m.TableNameWithPrefix()).Filter("book_id",m.BookId).Filter("parent_id",m.ParentId).Count()
+		if m.OrderSort == 0 {
+			sort, _ := o.QueryTable(m.TableNameWithPrefix()).Filter("book_id", m.BookId).Filter("parent_id", m.ParentId).Count()
 			m.OrderSort = int(sort) + 1
 		}
 		_, err = o.Insert(m)
@@ -219,4 +222,66 @@ func (m *Document) FindListByBookId(bookId int) (docs []*Document, err error) {
 	_, err = o.QueryTable(m.TableNameWithPrefix()).Filter("book_id", bookId).OrderBy("order_sort").All(&docs)
 
 	return
+}
+
+//根据项目ID查询文档列表.
+func (m *Document) FindListByBookIdOrLink(bookId int, linkId int, linkDoc string) (docs []*Document, err error) {
+	o := orm.NewOrm()
+	if linkId == 0 {
+		_, err = o.QueryTable(m.TableNameWithPrefix()).Filter("book_id", bookId).OrderBy("order_sort").All(&docs)
+	} else {
+		sql := "SELECT * FROM md_documents WHERE book_id = ? AND FIND_IN_SET(document_id,?)>0 ORDER BY order_sort,document_id "
+		_, err = o.Raw(sql, linkId, linkDoc).QueryRows(&docs)
+	}
+
+	return
+}
+
+// GetLinkBookDocuments ...
+func (m *Document) GetLinkBookDocuments(book_id int) (doclinks string, doclist string, err error) {
+
+	book, err := NewBook().Find(book_id)
+	if err != nil {
+		return "", "", err
+	}
+	doclinks = book.LinkDoc
+
+	buf := bytes.NewBufferString("")
+
+	GetLinkBookDocumentsInternal(doclinks, book.LinkId, 0, buf)
+
+	doclist = buf.String()
+	return doclinks, doclist, nil
+}
+
+// GetLinkBookDocumentsInternal ...
+func GetLinkBookDocumentsInternal(doclinks string, book_id, parent_id int, buf *bytes.Buffer) {
+	var docs []*Document
+	o := orm.NewOrm()
+	sql2 := `SELECT document_id,document_name,FIND_IN_SET(document_id,?) AS modify_at
+		FROM md_documents  
+		WHERE book_id = ? AND parent_id= ?  
+		ORDER BY order_sort  ,document_id  `
+	count, _ := o.Raw(sql2, doclinks, book_id, parent_id).QueryRows(&docs)
+	if count > 0 {
+		buf.WriteString("<ul>\r\n")
+		for _, item := range docs {
+			buf.WriteString("<li><input type=\"checkbox\" id=\"")
+			buf.WriteString(fmt.Sprintf("%d", item.DocumentId))
+			buf.WriteString("\"  checked=\"checked\" ")
+			buf.WriteString("/><label><input type=\"checkbox\" ")
+			if item.ModifyAt > 0 {
+				buf.WriteString(" checked=\"checked\" ")
+			}
+			buf.WriteString("/><span></span></label><label for=\"")
+			buf.WriteString(fmt.Sprintf("%d", item.DocumentId))
+			buf.WriteString("\">")
+			buf.WriteString(template.HTMLEscapeString(item.DocumentName))
+			buf.WriteString("</label>")
+			GetLinkBookDocumentsInternal(doclinks, book_id, item.DocumentId, buf)
+			buf.WriteString("</li>\r\n")
+		}
+		buf.WriteString("</ul>\r\n")
+	}
+
 }

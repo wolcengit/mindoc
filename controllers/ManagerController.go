@@ -285,9 +285,12 @@ func (c *ManagerController) Books() {
 	c.Prepare()
 	c.TplName = "manager/books.tpl"
 
+	linked, _ := c.GetInt("linked", 0)
+	c.Data["Linked"] = linked
+
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBookResult().FindToPager(pageIndex, conf.PageSize)
+	books, totalCount, err := models.NewBookResult().FindToPagerByLink(pageIndex, conf.PageSize, linked)
 
 	if err != nil {
 		c.Abort("500")
