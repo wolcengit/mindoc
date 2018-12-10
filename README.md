@@ -84,27 +84,33 @@ HTTP_PORT                   程序监听的端口号
 docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP_ADDR=10.xxx.xxx.xxx -e MYSQL_PORT_3306_TCP_PORT=3306 -e MYSQL_INSTANCE_NAME=mindoc -e MYSQL_USERNAME=root -e MYSQL_PASSWORD=123456 -e httpport=8181 -d daocloud.io/lifei6671/mindoc:latest
 ```
 ### docker-compose 一键安装
-1. 生成配置文件
-    > cp env-example .env
 
-    按照自己的环境填写配置信息到.env文件中
+1. 修改配置文件
+    修改`docker-compose.yml`中的配置信息，主要修改`volumes`节点，将宿主机的两个目录映射到容器内。
+    `environment`节点，配置自己的环境变量。
+    
 2. 一键完成所有环境搭建
-    > docker-compose up -d mindoc
+    > docker-compose up -d
 3. 浏览器访问
     > http://localhost:8181/
 
     整个部署完成了
 4. 常用命令参考
    - 启动
-        > docker-compose up -d mindoc
+        > docker-compose up -d
    - 停止
-        > docker-compose stop mindoc
+        > docker-compose stop
    - 重启
-        > docker-compose restart mindoc
+        > docker-compose restart
    - 停止删除容器，释放所有资源
         > docker-compose down
-
+   - 删除并重新创建
+        > docker-compose -f docker-compose.yml down && docker-compose up -d
    更多 docker-compose 的使用相关的内容 请查看官网文档或百度
+   
+# 支持 MinDoc
+
+![支付宝](https://raw.githubusercontent.com/lifei6671/mindoc/master/static/images/alipay.png) ![微信支付](https://raw.githubusercontent.com/lifei6671/mindoc/master/static/images/weixin.png)
 
 # 项目截图
 
@@ -147,12 +153,11 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
 
 # 使用的技术
 
-- beego 1.8.1
+- beego 1.10.0
 - mysql 5.6
-- editor.md
+- editor.md Markdown 编辑器
 - bootstrap 3.2
 - jquery 库
-- layer 弹出层框架
 - webuploader 文件上传框架
 - Nprogress 库
 - jstree 树状结构库
@@ -161,7 +166,8 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
 - layer 弹出层框架
 - highlight 代码高亮库
 - to-markdown HTML转Markdown库
-- wangEditor 富文本编辑器
+- quill 富文本编辑器
+- vue 框架
 
 
 # 主要功能

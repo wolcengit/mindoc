@@ -11,7 +11,7 @@
     <link href="{{cdncss "/static/bootstrap/css/bootstrap.min.css"}}" rel="stylesheet" type="text/css">
     <link href="{{cdncss "/static/font-awesome/css/font-awesome.min.css"}}" rel="stylesheet" type="text/css">
 
-    <link href="{{cdncss "/static/css/main.css"}}" rel="stylesheet">
+    <link href="{{cdncss "/static/css/main.css" "version"}}" rel="stylesheet">
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -24,16 +24,7 @@
     {{template "widgets/header.tpl" .}}
     <div class="container manual-body">
         <div class="row">
-            <div class="page-left">
-                <ul class="menu">
-                    <li><a href="{{urlfor "ManagerController.Index"}}" class="item"><i class="fa fa-dashboard" aria-hidden="true"></i> 仪表盘</a> </li>
-                    <li><a href="{{urlfor "ManagerController.Users" }}" class="item"><i class="fa fa-users" aria-hidden="true"></i> 用户管理</a> </li>
-                    <li><a href="{{urlfor "ManagerController.Books" }}" class="item"><i class="fa fa-book" aria-hidden="true"></i> 项目管理</a> </li>
-                    <li><a href="{{urlfor "ManagerController.Setting" }}" class="item"><i class="fa fa-cogs" aria-hidden="true"></i> 配置管理</a> </li>
-                    <li class="active"><a href="{{urlfor "ManagerController.AttachList" }}" class="item"><i class="fa fa-cloud-upload" aria-hidden="true"></i> 附件管理</a> </li>
-                    <li><a href="{{urlfor "ManagerController.LabelList" }}" class="item"><i class="fa fa-bookmark" aria-hidden="true"></i> 标签管理</a> </li>
-                </ul>
-            </div>
+        {{template "manager/widgets.tpl" "attach"}}
             <div class="page-right">
                 <div class="m-box">
                     <div class="box-head">
@@ -55,13 +46,15 @@
                             {{end}}
                     </div>
                     <div class="form-group">
-                        <label>项目名称</label>
+                        <label>项目/文章名称</label>
                         <input type="text" value="{{.Model.BookName}}" class="form-control input-readonly" readonly placeholder="项目名称">
                     </div>
+                    {{if ne .Model.BookId 0}}
                     <div class="form-group">
                         <label>文档名称</label>
                         <input type="text" value="{{.Model.DocumentName}}" class="form-control input-readonly" readonly placeholder="文档名称">
                     </div>
+                    {{end}}
                     <div class="form-group">
                         <label>文件路径</label>
                         <input type="text" value="{{.Model.FilePath}}" class="form-control input-readonly" readonly placeholder="文件路径">

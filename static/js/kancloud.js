@@ -1,3 +1,48 @@
+var events = function () {
+    var articleOpen = function (event, $param) {
+        //当打开文档时，将文档ID加入到本地缓存。
+        window.sessionStorage && window.sessionStorage.setItem("MinDoc::LastLoadDocument:" + window.book.identify, $param.$id);
+        var prevState = window.history.state || {};
+        if ('pushState' in history) {
+
+            if ($param.$id) {
+                prevState.$id === $param.$id || window.history.pushState($param, $param.$id, $param.$url);
+            } else {
+                window.history.pushState($param, $param.$id, $param.$url);
+                window.history.replaceState($param, $param.$id, $param.$url);
+            }
+        } else {
+            window.location.hash = $param.$url;
+        }
+
+        initHighlighting();
+        $(window).resize();
+
+        $(".manual-right").scrollTop(0);
+        //使用layer相册功能查看图片
+        layer.photos({photos: "#page-content"});
+    };
+
+    return {
+        data: function ($key, $value) {
+            $key = "MinDoc::Document:" + $key;
+            if (typeof $value === "undefined") {
+                return $("body").data($key);
+            } else {
+                return $('body').data($key, $value);
+            }
+        },
+        trigger: function ($e, $obj) {
+            if ($e === "article.open") {
+                articleOpen($e, $obj);
+            } else {
+                $('body').trigger('article.open', $obj);
+            }
+        }
+    }
+
+}();
+
 /***
  * 加载文档到阅读区
  * @param $url
@@ -9,25 +54,24 @@ function loadDocument($url, $id, $callback) {
         url : $url,
         type : "GET",
         beforeSend : function (xhr) {
-            var body = events.data('body_' + $id);
-            var title = events.data('title_' + $id);
-            var doc_title = events.data('doc_title_' + $id);
-            var doc_info = events.data('doc_info_' + $id);
-
-            if (body && title && doc_title) {
+            var data = events.data($id);
+            if(data) {
                 if (typeof $callback === "function") {
-                    body = $callback(body);
+                    data.body = $callback(data.body);
+                }else if(data.version && data.version != $callback){
+                    return true;
                 }
+                $("#page-content").html(data.body);
+                $("title").text(data.title);
+                $("#article-title").text(data.doc_title);
+                $("#article-info").text(data.doc_info);
 
-                $("#page-content").html(body);
-                $("title").text(title);
-                $("#article-title").text(doc_title);
-                $("#article-info").text(doc_info);
-
-                events.trigger('article.open', { $url : $url,  $id : $id });
+                events.trigger('article.open', {$url: $url, $id: $id});
 
                 return false;
+
             }
+
             NProgress.start();
         },
         success : function (res) {
@@ -47,10 +91,7 @@ function loadDocument($url, $id, $callback) {
                 $("#article-title").text(doc_title);
                 $("#article-info").text(doc_info);
 
-                events.data('body_' + $id, body);
-                events.data('title_' + $id, title);
-                events.data('doc_title_' + $id, doc_title);
-                events.data('doc_info_' + $id, doc_info);
+                events.data($id, res.data);
 
                 events.trigger('article.open', { $url : $url, $id : $id });
             } else if (res.errcode === 6000) {
@@ -79,27 +120,70 @@ function initHighlighting() {
             }
             hljs.highlightBlock(block);
         });
-        hljs.initLineNumbersOnLoad();
+        // hljs.initLineNumbersOnLoad();
     }catch (e){
         console.log(e);
     }
 }
 
 
-var events = $("body");
+
 
 $(function () {
     $(".view-backtop").on("click", function () {
         $('.manual-right').animate({ scrollTop: '0px' }, 200);
     });
     $(".manual-right").scroll(function () {
-        var top = $(".manual-right").scrollTop();
-        if (top > 100) {
-            $(".view-backtop").addClass("active");
-        } else {
-            $(".view-backtop").removeClass("active");
+        try {
+            var top = $(".manual-right").scrollTop();
+            if (top > 100) {
+                $(".view-backtop").addClass("active");
+            } else {
+                $(".view-backtop").removeClass("active");
+            }
+        }catch (e) {
+            console.log(e);
         }
-    });
+
+        try{
+            var scrollTop = $("body").scrollTop();
+            var oItem = $(".markdown-heading").find(".reference-link");
+            var oName = "";
+            $.each(oItem,function(){
+                var oneItem = $(this);
+                var offsetTop = oneItem.offset().top;
+
+                if(offsetTop-scrollTop < 100){
+                    oName = "#" + oneItem.attr("name");
+                }
+            });
+            $(".markdown-toc-list a").each(function () {
+                if(oName === $(this).attr("href")) {
+                    $(this).parents("li").addClass("directory-item-active");
+                }else{
+                    $(this).parents("li").removeClass("directory-item-active");
+                }
+            });
+            if(!$(".markdown-toc-list li").hasClass('directory-item-active')) {
+                $(".markdown-toc-list li:eq(0)").addClass("directory-item-active");
+            }
+        }catch (e) {
+            console.log(e);
+        }
+    }).on("click",".markdown-toc-list a", function () {
+        var $this = $(this);
+        setTimeout(function () {
+            $(".markdown-toc-list li").removeClass("directory-item-active");
+            $this.parents("li").addClass("directory-item-active");
+        },10);
+    }).find(".markdown-toc-list li:eq(0)").addClass("directory-item-active");
+
+
+    $(window).resize(function (e) {
+        var h = $(".manual-catalog").innerHeight() - 20;
+        $(".markdown-toc").height(h);
+    }).resize();
+
     window.isFullScreen = false;
 
     initHighlighting();
@@ -117,13 +201,7 @@ $(function () {
         }
     }).on('select_node.jstree', function (node, selected, event) {
         $(".m-manual").removeClass('manual-mobile-show-left');
-        var url = selected.node.a_attr.href;
-
-        if (url === window.location.href) {
-            return false;
-        }
-
-        loadDocument(url, selected.node.id);
+        loadDocument(selected.node.a_attr.href, selected.node.id,selected.node.a_attr['data-version']);
     });
 
     $("#slidebar").on("click", function () {
@@ -143,34 +221,6 @@ $(function () {
         } else {
             $(".m-manual").removeClass('manual-fullscreen-active');
         }
-    });
-
-    // 处理打开事件
-    events.on('article.open', function (event, $param) {
-
-        var prevState = window.history.state || {};
-        if ('pushState' in history) {
-            // if ($param.$init === false) {
-            //     window.history.replaceState($param, $param.$id, $param.$url);
-            // } else {
-            //     window.history.pushState($param, $param.$id, $param.$url);
-            // }
-
-            if ($param.$id) {
-                prevState.$id === $param.$id || window.history.pushState($param, $param.$id, $param.$url);
-            } else {
-                window.history.pushState($param, $param.$id, $param.$url);
-                window.history.replaceState($param, $param.$id, $param.$url);
-            }
-        } else {
-            window.location.hash = $param.$url;
-        }
-
-        initHighlighting();
-
-        $(".manual-right").scrollTop(0);
-        //使用layer相册功能查看图片
-        layer.photos({photos: "#page-content"});
     });
 
     $(".navg-item[data-mode]").on("click", function () {

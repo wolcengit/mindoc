@@ -151,12 +151,16 @@ func AbsolutePath(p string) (string, error) {
 }
 
 // FileExists reports whether the named file or directory exists.
-func FileExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		return false
-	}else{
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
 		return true
 	}
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return false
 }
 
 func FormatBytes(size int64) string {
@@ -237,21 +241,4 @@ func ReadFileAndIgnoreUTF8BOM(filename string) ([]byte,error) {
 
 
 	return data,nil
-
-	//fd, err := os.Open(filename)
-	//
-	//if err != nil {
-	//	return nil,err
-	//}
-	//bom := [3]byte{}
-	//
-	//_, err = io.ReadFull(fd, bom[:])
-	//if err != nil {
-	//	return nil,err
-	//}
-	//if bom[0] != 0xef || bom[1] != 0xbb || bom[2] != 0xbf {
-	//	_, err = fd.Seek(0, 0)
-	//}
-	//
-	//return ioutil.ReadAll(fd)
 }
