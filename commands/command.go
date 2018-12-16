@@ -31,6 +31,9 @@ import (
 
 // RegisterDataBase 注册数据库
 func RegisterDataBase() {
+	if beego.AppConfig.String("runmode") == "dev" {
+		orm.Debug = true
+	}
 	beego.Info("正在初始化数据库配置.")
 	adapter := beego.AppConfig.String("db_adapter")
 	orm.DefaultTimeLoc = time.Local

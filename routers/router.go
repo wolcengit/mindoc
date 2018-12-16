@@ -73,6 +73,7 @@ func init() {
 	beego.Router("/book/:key/release", &controllers.BookController{}, "post:Release")
 	beego.Router("/book/:key/sort", &controllers.BookController{}, "post:SaveSort")
 	beego.Router("/book/:key/teams", &controllers.BookController{}, "*:Team")
+	beego.Router("/book/:key/links", &controllers.BookController{}, "*:Links")
 
 
 	beego.Router("/book/create", &controllers.BookController{}, "*:Create")
@@ -148,5 +149,7 @@ func init() {
 
 	beego.Router("/items", &controllers.ItemsetsController{},"get:Index")
 	beego.Router("/items/:key", &controllers.ItemsetsController{},"get:List")
+
+	beego.Router("/mindoc/rest", &controllers.MinDocRestController{}, "post:PostContent")
 
 }

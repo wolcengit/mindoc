@@ -444,6 +444,7 @@ func (c *BookController) Create() {
 		privatelyOwned, _ := strconv.Atoi(c.GetString("privately_owned"))
 		commentStatus := c.GetString("comment_status")
 		itemId, _ := c.GetInt("itemId")
+		linkBook, _ := c.GetInt("link_book")
 
 		if bookName == "" {
 			c.JsonResult(6001, "项目名称不能为空")
@@ -519,6 +520,7 @@ func (c *BookController) Create() {
 		book.IsDownload = 1
 		book.AutoRelease = 0
 		book.ItemId = itemId
+		book.LinkBook = linkBook
 
 		book.Editor = "markdown"
 		book.Theme = "default"
@@ -1004,4 +1006,60 @@ func (c *BookController) IsPermission() (*models.BookResult, error) {
 		return book, errors.New("权限不足")
 	}
 	return book, nil
+}
+
+func (c *BookController) Links() {
+	c.Prepare()
+	c.TplName = "book/links.tpl"
+
+	key := c.Ctx.Input.Param(":key")
+	pageIndex, _ := c.GetInt("page", 1)
+
+	if key == "" {
+		c.ShowErrorPage(404, "项目不存在或已删除")
+	}
+
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	if err != nil {
+		if err == models.ErrPermissionDenied {
+			c.ShowErrorPage(403, "权限不足")
+		}
+		c.ShowErrorPage(500, "系统错误")
+	}
+	//如果不是创始人也不是管理员则不能操作
+	if book.RoleId != conf.BookFounder && book.RoleId != conf.BookAdmin {
+		c.Abort("403")
+	}
+	c.Data["Model"] = book
+
+	books, totalCount, err := models.NewLinkDocument().FindToLinksPager(pageIndex, conf.PageSize, book.BookId)
+
+	if err != nil {
+		logs.Error("BookController.Links => ", err)
+		c.Abort("500")
+	}
+
+	for i, book := range books {
+		books[i].Description = utils.StripTags(string(blackfriday.Run([]byte(book.Description))))
+		books[i].ModifyTime = book.ModifyTime.Local()
+		books[i].CreateTime = book.CreateTime.Local()
+	}
+
+	if totalCount > 0 {
+		pager := pagination.NewPagination(c.Ctx.Request, totalCount, conf.PageSize, c.BaseUrl())
+		c.Data["PageHtml"] = pager.HtmlPages()
+	} else {
+		c.Data["PageHtml"] = ""
+	}
+	b, err := json.Marshal(books)
+
+	if err != nil || len(books) <= 0 {
+		c.Data["Result"] = template.JS("[]")
+	} else {
+		c.Data["Result"] = template.JS(string(b))
+	}
+	if itemsets, err := models.NewItemsets().First(1); err == nil {
+		c.Data["Item"] = itemsets
+	}
+
 }

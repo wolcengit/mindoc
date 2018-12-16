@@ -69,6 +69,7 @@ type BookResult struct {
 	IsDisplayComment bool   `json:"is_display_comment"`
 	IsDownload       bool   `json:"is_download"`
 	AutoSave         bool   `json:"auto_save"`
+	LinkBook 		 int 	`json:"link_book"`
 }
 
 func NewBookResult() *BookResult {
@@ -206,6 +207,7 @@ func (m *BookResult) ToBookResult(book Book) *BookResult {
 	m.IsDownload = book.IsDownload == 0
 	m.AutoSave = book.AutoSave == 1
 	m.ItemId = book.ItemId
+	m.LinkBook = book.LinkBook
 
 	if book.Theme == "" {
 		m.Theme = "default"

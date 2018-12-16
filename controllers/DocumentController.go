@@ -132,6 +132,10 @@ func (c *DocumentController) Read() {
 	if doc.BookId != bookResult.BookId {
 		c.ShowErrorPage(404, "文档不存在或已删除")
 	}
+	if doc.LinkId > 0{
+	   models.NewLinkDocument().UpdateLinkBookDocument(doc.DocumentId);
+	   doc,_ = doc.Find(doc.DocumentId)
+	}
 
 	doc.Processor()
 
@@ -216,6 +220,10 @@ func (c *DocumentController) Edit() {
 		c.TplName = "document/" + bookResult.Editor + "_edit_template.tpl"
 	}
 
+	if bookResult.LinkBook > 0 {
+		c.TplName = "document/link_edit_template.tpl"
+	}
+
 	c.Data["Model"] = bookResult
 
 	r, _ := json.Marshal(bookResult)
@@ -244,6 +252,25 @@ func (c *DocumentController) Edit() {
 		c.Data["UploadFileSize"] = conf.GetUploadFileSize()
 	} else {
 		c.Data["UploadFileSize"] = "undefined";
+	}
+
+	if bookResult.LinkBook > 0 {
+		if c.Ctx.Input.IsPost() {
+			link_docs := strings.TrimSpace(c.GetString("link_docs", ""))
+			if link_docs == "" {
+				c.JsonResult(7000, "没有选择任何文档")
+			}
+			models.NewLinkDocument().SetLinkBookDocuments(bookResult.BookId, link_docs)
+		}
+
+		doclinks, docs, err := models.NewLinkDocument().GetLinkBookDocuments(bookResult.BookId)
+		if err != nil {
+			beego.Error(err)
+			c.JsonResult(7000, "保存项目失败")
+		}
+		c.Data["LinkDocLinks"] = doclinks
+		c.Data["LinkDocResult"] = docs
+
 	}
 }
 
@@ -836,6 +863,9 @@ func (c *DocumentController) Export() {
 	}
 	if !bookResult.IsDownload {
 		c.ShowErrorPage(200, "当前项目没有开启导出功能")
+	}
+	if bookResult.LinkBook > 0 {
+		models.NewLinkDocument().GetLinkBookDocuments(bookResult.BookId)
 	}
 
 	if !strings.HasPrefix(bookResult.Cover, "http:://") && !strings.HasPrefix(bookResult.Cover, "https:://") {

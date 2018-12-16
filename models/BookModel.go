@@ -77,6 +77,8 @@ type Book struct {
 	IsUseFirstDocument int `orm:"column(is_use_first_document);type(int);default(0)" json:"is_use_first_document"`
 	//是否开启自动保存：0 否/1 是
 	AutoSave int `orm:"column(auto_save);type(tinyint);default(0)" json:"auto_save"`
+	// link book parent
+	LinkBook int `orm:"column(link_book);type(int);default(0)" json:"link_book"`
 }
 
 func (book *Book) String() string {

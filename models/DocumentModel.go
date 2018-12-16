@@ -41,6 +41,8 @@ type Document struct {
 	//是否展开子目录：0 否/1 是
 	IsOpen     int           `orm:"column(is_open);type(int);default(0)" json:"is_open"`
 	AttachList []*Attachment `orm:"-" json:"attach"`
+	// link document id
+	LinkId   int    `orm:"column(link_id);type(int);default(0)" json:"link_id"`
 }
 
 // 多字段唯一键
