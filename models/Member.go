@@ -114,7 +114,7 @@ func (m *Member) ldapLogin(account string, password string) (*Member, error) {
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 		//修改objectClass通过配置文件获取值
 		fmt.Sprintf("(&(%s)(%s=%s))", beego.AppConfig.String("ldap_filter"), beego.AppConfig.String("ldap_attribute"), account),
-		[]string{"dn", "mail"},
+		[]string{"dn", "mail", "displayName","telephoneNumber"},
 		nil,
 	)
 	searchResult, err := lc.Search(searchRequest)
@@ -133,7 +133,9 @@ func (m *Member) ldapLogin(account string, password string) (*Member, error) {
 	}
 	if m.Account == "" {
 		m.Account = account
+		m.RealName = searchResult.Entries[0].GetAttributeValue("displayName")
 		m.Email = searchResult.Entries[0].GetAttributeValue("mail")
+		m.Phone = searchResult.Entries[0].GetAttributeValue("telephoneNumber")
 		m.AuthMethod = "ldap"
 		m.Avatar = "/static/images/headimgurl.jpg"
 		m.Role = conf.SystemRole(beego.AppConfig.DefaultInt("ldap_user_role", 2))

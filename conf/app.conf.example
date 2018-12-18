@@ -50,7 +50,7 @@ timezone = Asia/Shanghai
 
 
 
-####################MySQL 数据库配置###########################
+####################数据库配置###########################
 #支持MySQL和sqlite3两种数据库，如果是sqlite3 则 db_database 标识数据库的物理目录
 db_adapter="${MINDOC_DB_ADAPTER||sqlite3}"
 db_host="${MINDOC_DB_HOST||127.0.0.1}"
@@ -59,9 +59,6 @@ db_database="${MINDOC_DB_DATABASE||./database/mindoc.db}"
 db_username="${MINDOC_DB_USERNAME||root}"
 db_password="${MINDOC_DB_PASSWORD||123456}"
 
-####################sqlite3 数据库配置###########################
-#db_adapter=sqlite3
-#db_database=./database/mindoc.db
 
 #项目默认封面
 cover=/static/images/book.jpg
@@ -99,7 +96,7 @@ mail_expired="${MINDOC_EXPIRED||30}"
 secure="${MINDOC_MAIL_SECURE||LOGIN}"
 
 ###############配置导出项目###################
-enable_export="${MINDOC_ENABLE_EXPORT||false}"
+enable_export="${MINDOC_ENABLE_EXPORT||true}"
 #同一个项目同时运行导出程序的并行数量，取值1-4之间，取值越大导出速度越快，越占用资源
 export_process_num="${MINDOC_EXPORT_PROCESS_NUM||1}"
 
@@ -117,23 +114,23 @@ baidumapkey=
 
 ################Active Directory/LDAP################
 #是否启用ldap
-ldap_enable=false
+ldap_enable="${MINDOC_LDAP_ENABLE||false}"
 #ldap主机名
-ldap_host=ad.example.com
+ldap_host="${MINDOC_LDAP_HOST||ad.example.com}"
 #ldap端口
-ldap_port=3268
-#ldap内哪个属性作为用户名
-ldap_attribute=sAMAccountName
+ldap_port="${MINDOC_LDAP_PORT||389}"
+#ldap内哪个属性作为用户名 sAMAccountName userPrincipalName
+ldap_attribute="${MINDOC_LDAP_ATTRIBUTE||userPrincipalName}"
 #搜索范围
-ldap_base=DC=example,DC=com
+ldap_base="${MINDOC_LDAP_BASE||DC=example,DC=com}"
 #第一次绑定ldap用户dn
-ldap_user=CN=ldap helper,OU=example.com,DC=example,DC=com
+ldap_user="${MINDOC_LDAP_USER||CN=ldap helper,OU=example.com,DC=example,DC=com}"
 #第一次绑定ldap用户密码
-ldap_password=superSecret
+ldap_password="${MINDOC_LDAP_PASSWORD||P@ssw0rd}"
 #自动注册用户角色：0 超级管理员 /1 管理员/ 2 普通用户
-ldap_user_role=2
+ldap_user_role="${MINDOC_LDAP_ROLE||2}"
 #ldap搜索filter规则,AD服务器: objectClass=User, openldap服务器: objectClass=posixAccount ,也可以定义为其他属性,如: title=mindoc
-ldap_filter=objectClass=posixAccount
+ldap_filter="${MINDOC_LDAP_FILTER||objectClass=User}"
 
 ###############配置CDN加速##################
 cdn="${MINDOC_CDN_URL}"
