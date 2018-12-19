@@ -287,9 +287,10 @@ func (c *ManagerController) Books() {
 	c.Prepare()
 	c.TplName = "manager/books.tpl"
 
+	tab, _ := c.GetInt("tab", 0)
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBookResult().FindToPager(pageIndex, conf.PageSize)
+	books, totalCount, err := models.NewBookResult().FindToPager(pageIndex, conf.PageSize,tab)
 
 	if err != nil {
 		c.Abort("500")
@@ -310,6 +311,7 @@ func (c *ManagerController) Books() {
 		books[i].CreateTime = book.CreateTime.Local()
 	}
 	c.Data["Lists"] = books
+	c.Data["Tab"] = tab
 }
 
 //编辑项目.

@@ -321,23 +321,56 @@ func (book *Book) FindByIdentify(identify string, cols ...string) (*Book, error)
 }
 
 //分页查询指定用户的项目
-func (book *Book) FindToPager(pageIndex, pageSize, memberId int) (books []*BookResult, totalCount int, err error) {
+func (book *Book) FindToPager(pageIndex, pageSize, memberId int,tab int) (books []*BookResult, totalCount int, err error) {
 
 	o := orm.NewOrm()
 
-	//sql1 := "SELECT COUNT(book.book_id) AS total_count FROM " + book.TableNameWithPrefix() + " AS book LEFT JOIN " +
-	//	relationship.TableNameWithPrefix() + " AS rel ON book.book_id=rel.book_id AND rel.member_id = ? WHERE rel.relationship_id > 0 "
+	sqlpart := `FROM md_books AS book
+  				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
+  				LEFT JOIN (select book_id,min(role_id) as role_id
+                   from (select book_id,team_member_id,role_id 
+                         from md_team_relationship as mtr 
+                         left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
+					as t group by book_id) as team  on team.book_id=book.book_id
+				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
+				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
+				WHERE rel.role_id >= 0 or team.role_id >= 0 `
+	if tab == 0 {
+		sqlpart = `FROM md_books AS book
+  				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
+  				LEFT JOIN (select book_id,min(role_id) as role_id
+                   from (select book_id,team_member_id,role_id 
+                         from md_team_relationship as mtr 
+                         left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
+					as t group by book_id) as team  on team.book_id=book.book_id
+				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
+				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
+				WHERE book.privately_owned = 0 and (rel.role_id >= 0 or team.role_id >= 0) `
+	}else if tab == 1 {
+		sqlpart = `FROM md_books AS book
+  				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
+  				LEFT JOIN (select book_id,min(role_id) as role_id
+                   from (select book_id,team_member_id,role_id 
+                         from md_team_relationship as mtr 
+                         left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
+					as t group by book_id) as team  on team.book_id=book.book_id
+				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
+				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
+				WHERE book.privately_owned = 1 and (rel.role_id = 0 or team.role_id >= 0) `
+	}else if tab == 2 {
+		sqlpart = `FROM md_books AS book
+  				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
+  				LEFT JOIN (select book_id,min(role_id) as role_id
+                   from (select book_id,team_member_id,role_id 
+                         from md_team_relationship as mtr 
+                         left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
+					as t group by book_id) as team  on team.book_id=book.book_id
+				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
+				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
+				WHERE book.privately_owned = 1 and (rel.role_id > 0 or team.role_id >= 0) `
+	}
 
-	sql1 := `SELECT
-count(*) AS total_count
-FROM md_books AS book
-  LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
-  left join (select book_id,min(role_id) as role_id
-             from (select book_id,team_member_id,role_id
-                   from md_team_relationship as mtr
-                     left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
-					as t group by t.book_id)
-			as team on team.book_id=book.book_id WHERE rel.role_id >= 0 or team.role_id >= 0`
+	sql1 := `SELECT count(*) AS total_count ` + sqlpart
 
 	err = o.Raw(sql1, memberId, memberId).QueryRow(&totalCount)
 
@@ -347,28 +380,9 @@ FROM md_books AS book
 
 	offset := (pageIndex - 1) * pageSize
 
-	//sql2 := "SELECT book.*,rel.member_id,rel.role_id,m.account as create_name FROM " + book.TableNameWithPrefix() + " AS book" +
-	//	" LEFT JOIN " + relationship.TableNameWithPrefix() + " AS rel ON book.book_id=rel.book_id AND rel.member_id = ?" +
-	//	" LEFT JOIN " + relationship.TableNameWithPrefix() + " AS rel1 ON book.book_id=rel1.book_id  AND rel1.role_id=0" +
-	//	" LEFT JOIN " + NewMember().TableNameWithPrefix() + " AS m ON rel1.member_id=m.member_id " +
-	//	" WHERE rel.relationship_id > 0 ORDER BY book.order_index DESC,book.book_id DESC LIMIT " + fmt.Sprintf("%d,%d", offset, pageSize)
-
-	sql2 := `SELECT
-  book.*,
-  case when rel.relationship_id  is null then team.role_id else rel.role_id end as role_id,
-  m.account as create_name
-FROM md_books AS book
-  LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
-  left join (select book_id,min(role_id) as role_id
-             from (select book_id,team_member_id,role_id
-                   from md_team_relationship as mtr
-                     left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
-					as t group by book_id) as team 
-			on team.book_id=book.book_id
-  LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
-  LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
-WHERE rel.role_id >= 0 or team.role_id >= 0
-ORDER BY book.order_index, book.book_id DESC limit ?,?`
+	sql2 := `SELECT book.*, case when rel.relationship_id  is null then team.role_id else rel.role_id end as role_id, m.real_name as create_name `
+	sql2 += sqlpart
+	sql2 += ` ORDER BY book.order_index, book.book_id DESC limit ?,? `
 
 	_, err = o.Raw(sql2, memberId, memberId, offset, pageSize).QueryRows(&books)
 	if err != nil {
@@ -473,12 +487,12 @@ func (book *Book) ThoroughDeleteBook(id int) error {
 }
 
 //分页查找系统首页数据.
-func (book *Book) FindForHomeToPager(pageIndex, pageSize, memberId int) (books []*BookResult, totalCount int, err error) {
+func (book *Book) FindForHomeToPager(pageIndex, pageSize, memberId int,tab int) (books []*BookResult, totalCount int, err error) {
 	o := orm.NewOrm()
 
 	offset := (pageIndex - 1) * pageSize
 	//如果是登录用户
-	if memberId > 0 {
+	if memberId > 0 || tab == 1 {
 		sql1 := `SELECT COUNT(*)
 FROM md_books AS book
   LEFT JOIN md_relationship AS rel ON rel.book_id = book.book_id AND rel.member_id = ?
@@ -487,12 +501,12 @@ FROM md_books AS book
                    from md_team_relationship as mtr
                      left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
 as t group by book_id) as team on team.book_id=book.book_id
-WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0`
-		err = o.Raw(sql1, memberId, memberId).QueryRow(&totalCount)
+WHERE book.privately_owned = ? and ( rel.role_id >=0 or team.role_id >=0 ) `
+		err = o.Raw(sql1, memberId, memberId, tab).QueryRow(&totalCount)
 		if err != nil {
 			return
 		}
-		sql2 := `SELECT book.*,rel1.*,member.account AS create_name,member.real_name FROM md_books AS book
+		sql2 := `SELECT book.*,rel1.*,member.real_name AS create_name,member.real_name FROM md_books AS book
   LEFT JOIN md_relationship AS rel ON rel.book_id = book.book_id AND rel.member_id = ?
   left join (select book_id,min(role_id) AS role_id
              from (select book_id,role_id
@@ -501,9 +515,9 @@ WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0`
 as t group by book_id) as team on team.book_id=book.book_id
   LEFT JOIN md_relationship AS rel1 ON rel1.book_id = book.book_id AND rel1.role_id = 0
   LEFT JOIN md_members AS member ON rel1.member_id = member.member_id
-WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0 ORDER BY order_index desc,book.book_id DESC LIMIT ?,?`
+WHERE book.privately_owned = ? and ( rel.role_id >=0 or team.role_id >=0 ) ORDER BY order_index desc,book.book_id DESC LIMIT ?,?`
 
-		_, err = o.Raw(sql2, memberId, memberId, offset, pageSize).QueryRows(&books)
+		_, err = o.Raw(sql2, memberId, memberId, tab, offset, pageSize).QueryRows(&books)
 
 	} else {
 		count, err1 := o.QueryTable(book.TableNameWithPrefix()).Filter("privately_owned", 0).Count()

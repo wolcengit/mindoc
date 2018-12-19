@@ -20,6 +20,14 @@
 <div class="manual-reader manual-container">
     {{template "widgets/header.tpl" .}}
     <div class="container manual-body">
+        <div class="row mgt-15px">
+            <div class="col-xs-12 mgt-15px">
+                <ul class="nav nav-tabs">
+                    <li {{if eq $.Tab 0}}class="active"{{end}}><a href="{{urlfor "HomeController.Index"}}?tab=0">公开项目</a></li>
+                    <li {{if eq $.Tab 1}}class="active"{{end}}><a href="{{urlfor "HomeController.Index"}}?tab=1">我的项目</a></li>
+                </ul>
+            </div>
+        </div>
         <div class="row">
              <div class="manual-list">
                 {{range $index,$item := .Lists}}

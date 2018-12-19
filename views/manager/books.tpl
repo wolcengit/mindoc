@@ -31,6 +31,15 @@
                         <strong class="box-title">项目列表</strong>
                     </div>
                 </div>
+                <div class="row mgt-15px">
+                    <div class="col-xs-12 mgt-15px">
+                        <ul class="nav nav-tabs">
+                            <li {{if eq $.Tab 0}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=0">公开项目</a></li>
+                            <li {{if eq $.Tab 1}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=1">私有项目</a></li>
+                            <li {{if eq $.Tab 2}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=2">链接项目</a></li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="box-body" id="bookList">
                     <div class="book-list">
 

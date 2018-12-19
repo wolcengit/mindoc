@@ -33,9 +33,10 @@ func (c *BookController) Index() {
 	c.Prepare()
 	c.TplName = "book/index.tpl"
 
+	tab, _ := c.GetInt("tab", 0)
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId)
+	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId,tab)
 
 	if err != nil {
 		logs.Error("BookController.Index => ", err)
@@ -64,6 +65,7 @@ func (c *BookController) Index() {
 	if itemsets, err := models.NewItemsets().First(1); err == nil {
 		c.Data["Item"] = itemsets
 	}
+	c.Data["Tab"] = tab
 }
 
 // Dashboard 项目概要 .

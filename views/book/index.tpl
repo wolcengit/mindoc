@@ -41,6 +41,15 @@
                         <button type="button" data-toggle="modal" data-target="#importBookDialogModal" class="btn btn-primary btn-sm pull-right" style="margin-right: 5px;">导入项目</button>
                     </div>
                 </div>
+                <div class="row mgt-15px">
+                    <div class="col-xs-12 mgt-15px">
+                        <ul class="nav nav-tabs">
+                            <li {{if eq $.Tab 0}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=0">公开项目</a></li>
+                            <li {{if eq $.Tab 1}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=1">私有项目</a></li>
+                            <li {{if eq $.Tab 2}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=2">参与项目</a></li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="box-body" id="bookList">
                     <div class="book-list">
                         <template v-if="lists.length <= 0">
