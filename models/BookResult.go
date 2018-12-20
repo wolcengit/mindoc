@@ -86,8 +86,8 @@ func (m *BookResult) String() string {
 }
 
 // 根据项目标识查询项目以及指定用户权限的信息.
-func (m *BookResult) FindByIdentify(identify string, memberId int) (*BookResult, error) {
-	if identify == "" || memberId <= 0 {
+func (m *BookResult) FindByIdentify(identify string, member *Member) (*BookResult, error) {
+	if identify == ""  {
 		return m, ErrInvalidParameter
 	}
 	o := orm.NewOrm()
@@ -101,11 +101,22 @@ func (m *BookResult) FindByIdentify(identify string, memberId int) (*BookResult,
 		return m, err
 	}
 
-	roleId, err := NewBook().FindForRoleId(book.BookId, memberId)
-
-	if err != nil {
-		return m, ErrPermissionDenied
+	memberId := 0
+	isAdmin := false
+	if member != nil{
+		memberId = member.MemberId
+		isAdmin = member.IsAdministrator()
 	}
+	roleId := conf.BookRole(1)
+	if !isAdmin {
+		roleId1, err := NewBook().FindForRoleId(book.BookId, memberId)
+
+		if err != nil {
+			return m, ErrPermissionDenied
+		}
+		roleId = roleId1
+	}
+
 	var relationship2 Relationship
 
 	//查找项目创始人
@@ -116,7 +127,7 @@ func (m *BookResult) FindByIdentify(identify string, memberId int) (*BookResult,
 		return m, ErrPermissionDenied
 	}
 
-	member, err := NewMember().Find(relationship2.MemberId)
+	member1, err := NewMember().Find(relationship2.MemberId)
 	if err != nil {
 		return m, err
 	}
@@ -124,10 +135,10 @@ func (m *BookResult) FindByIdentify(identify string, memberId int) (*BookResult,
 	m.ToBookResult(book)
 	m.RoleId = roleId
 	m.MemberId = memberId
-	m.CreateName = member.Account
+	m.CreateName = member1.Account
 
-	if member.RealName != "" {
-		m.RealName = member.RealName
+	if member1.RealName != "" {
+		m.RealName = member1.RealName
 	}
 
 	if m.RoleId == conf.BookFounder {

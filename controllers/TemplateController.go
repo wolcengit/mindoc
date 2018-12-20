@@ -23,7 +23,7 @@ func (c *TemplateController) isPermission() (error) {
 	}
 
 	if !c.Member.IsAdministrator() {
-		book, err := models.NewBookResult().FindByIdentify(bookIdentify, c.Member.MemberId)
+		book, err := models.NewBookResult().FindByIdentify(bookIdentify, c.Member)
 		if err != nil {
 			if err == orm.ErrNoRows {
 				return errors.New("项目不存在或没有权限")

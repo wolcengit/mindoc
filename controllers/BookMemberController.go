@@ -72,7 +72,7 @@ func (c *BookMemberController) ChangeRole() {
 	if memberId == c.Member.MemberId {
 		c.JsonResult(6006, "不能变更自己的权限")
 	}
-	book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 	if err != nil {
 		if err == models.ErrPermissionDenied {
@@ -123,7 +123,7 @@ func (c *BookMemberController) RemoveMember() {
 	if member_id == c.Member.MemberId {
 		c.JsonResult(6006, "不能删除自己")
 	}
-	book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 	if err != nil {
 		if err == models.ErrPermissionDenied {
@@ -148,7 +148,7 @@ func (c *BookMemberController) RemoveMember() {
 
 func (c *BookMemberController) IsPermission() (*models.BookResult, error) {
 	identify := c.GetString("identify")
-	book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 	if err != nil {
 		if err == models.ErrPermissionDenied {

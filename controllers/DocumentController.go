@@ -196,7 +196,7 @@ func (c *DocumentController) Edit() {
 
 		bookResult = models.NewBookResult().ToBookResult(*book)
 	} else {
-		bookResult, err = models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err = models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil {
 			if err == orm.ErrNoRows || err == models.ErrPermissionDenied{
@@ -303,7 +303,7 @@ func (c *DocumentController) Create() {
 
 		bookId = book.BookId
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("FindByIdentify => ", err)
@@ -412,7 +412,7 @@ func (c *DocumentController) Upload() {
 
 		bookId = book.BookId
 	} else {
-		book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil {
 			beego.Error("DocumentController.Edit => ", err)
@@ -527,16 +527,10 @@ func (c *DocumentController) DownloadAttachment() {
 	attachId, _ := strconv.Atoi(c.Ctx.Input.Param(":attach_id"))
 	token := c.GetString("token")
 
-	memberId := 0
-
-	if c.Member != nil {
-		memberId = c.Member.MemberId
-	}
-
 	bookId := 0
 
 	// 判断用户是否参与了项目
-	bookResult, err := models.NewBookResult().FindByIdentify(identify, memberId)
+	bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 	if err != nil {
 		// 判断项目公开状态
@@ -648,7 +642,7 @@ func (c *DocumentController) Delete() {
 
 		bookId = book.BookId
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("FindByIdentify => ", err)
@@ -708,7 +702,7 @@ func (c *DocumentController) Content() {
 		bookId = book.BookId
 		autoRelease = book.AutoRelease == 1
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("项目不存在或权限不足 -> ", err)
@@ -1021,7 +1015,7 @@ func (c *DocumentController) History() {
 		bookId = book.BookId
 		c.Data["Model"] = book
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("查找项目失败 ->", err)
 			c.Data["ErrorMessage"] = "项目不存在或权限不足"
@@ -1092,7 +1086,7 @@ func (c *DocumentController) DeleteHistory() {
 
 		bookId = book.BookId
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("查找项目失败 ->", err)
 			c.JsonResult(6002, "项目不存在或权限不足")
@@ -1150,7 +1144,7 @@ func (c *DocumentController) RestoreHistory() {
 
 		bookId = book.BookId
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("FindByIdentify => ", err)
 			c.JsonResult(6002, "项目不存在或权限不足")
@@ -1207,7 +1201,7 @@ func (c *DocumentController) Compare() {
 		c.Data["Model"] = book
 		editor = book.Editor
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 		if err != nil || bookResult.RoleId == conf.BookObserver {
 			beego.Error("FindByIdentify => ", err)
 			c.ShowErrorPage(403, "权限不足")

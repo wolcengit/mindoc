@@ -79,7 +79,7 @@ func (c *BookController) Dashboard() {
 		c.Abort("404")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			c.Abort("403")
@@ -102,7 +102,7 @@ func (c *BookController) Setting() {
 		c.Abort("404")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == orm.ErrNoRows {
 			c.Abort("404")
@@ -406,7 +406,7 @@ func (c *BookController) Users() {
 		c.ShowErrorPage(404, "项目不存在或已删除")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			c.Abort("403")
@@ -531,7 +531,7 @@ func (c *BookController) Create() {
 			logs.Error("Insert => ", err)
 			c.JsonResult(6005, "保存项目失败")
 		}
-		bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member)
 
 		if err != nil {
 			beego.Error(err)
@@ -560,7 +560,7 @@ func (c *BookController) Copy() {
 		if err != nil {
 			c.JsonResult(6002, "复制项目出错")
 		} else {
-			bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member.MemberId)
+			bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member)
 			if err != nil {
 				beego.Error("查询失败")
 			}
@@ -734,7 +734,7 @@ func (c *BookController) Release() {
 		}
 		bookId = book.BookId
 	} else {
-		book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 		if err != nil {
 			if err == models.ErrPermissionDenied {
@@ -780,7 +780,7 @@ func (c *BookController) SaveSort() {
 		}
 		book_id = book.BookId
 	} else {
-		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+		bookResult, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 		if err != nil {
 			beego.Error("DocumentController.Edit => ", err)
 
@@ -854,7 +854,7 @@ func (c *BookController) Team() {
 		c.ShowErrorPage(404, "项目不存在或已删除")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			c.ShowErrorPage(403, "权限不足")
@@ -993,7 +993,7 @@ func (c *BookController) IsPermission() (*models.BookResult, error) {
 		return nil, errors.New("参数错误")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(identify, c.Member)
 
 	if err != nil {
 		if err == models.ErrPermissionDenied {
@@ -1021,7 +1021,7 @@ func (c *BookController) Links() {
 		c.ShowErrorPage(404, "项目不存在或已删除")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			c.ShowErrorPage(403, "权限不足")

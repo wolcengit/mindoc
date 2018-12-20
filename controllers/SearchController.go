@@ -87,7 +87,7 @@ func (c *SearchController) User() {
 		c.JsonResult(404, "参数错误")
 	}
 
-	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member)
 	if err != nil {
 		if err == models.ErrPermissionDenied {
 			c.JsonResult(403, "没有权限")

@@ -186,7 +186,7 @@ func (c *BlogController) ManageSetting() {
 
 			// 如果不是超级管理员，则校验权限
 			if !c.Member.IsAdministrator() {
-				bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member.MemberId)
+				bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member)
 
 				if err != nil || bookResult.RoleId == conf.BookObserver {
 					c.JsonResult(6002, "关联文档不存在或权限不足")
@@ -317,7 +317,7 @@ func (c *BlogController) ManageEdit() {
 
 			// 如果不是超级管理员，则校验权限
 			if !c.Member.IsAdministrator() {
-				bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member.MemberId)
+				bookResult, err := models.NewBookResult().FindByIdentify(book.Identify, c.Member)
 
 				if err != nil || bookResult.RoleId == conf.BookObserver {
 					beego.Error("FindByIdentify => ", err)
