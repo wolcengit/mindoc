@@ -25,3 +25,5 @@ _testmain.go
 .idea
 /conf/app.conf
 /runtime
+/mindoc
+/mindoc_linux_amd64
