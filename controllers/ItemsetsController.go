@@ -69,11 +69,7 @@ func (c *ItemsetsController) List() {
 			c.Abort("500")
 		}
 	}
-	memberId := 0
-	if c.Member != nil {
-		memberId = c.Member.MemberId
-	}
-	searchResult, totalCount, err := models.NewItemsets().FindItemsetsByItemKey(itemKey, pageIndex, pageSize, memberId)
+	searchResult, totalCount, err := models.NewItemsets().FindItemsetsByItemKey(itemKey, pageIndex, pageSize, c.Member)
 
 	if err != nil && err != orm.ErrNoRows {
 		c.ShowErrorPage(500, "查询文档列表时出错")

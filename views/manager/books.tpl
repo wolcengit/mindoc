@@ -66,8 +66,8 @@
 
                                             <ul class="dropdown-menu">
                                                 <li><a href="{{urlfor "DocumentController.Index" ":key" $item.Identify}}" target="_blank">阅读</a></li>
-                                                {{/*<li><a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}">设置</a></li>*/}}
-                                                <li><a href="{{urlfor "BookController.Setting" ":key" $item.Identify}}">设置</a></li>
+                                                <li><a href="{{urlfor "ManagerController.EditBook" ":key" $item.Identify}}">管理</a></li>
+                                                <li><a href="{{urlfor "BookController.Setting" ":key" $item.Identify}}" target="_blank">设置</a></li>
                                                 <li><a href="javascript:deleteBook('{{$item.BookId}}');">删除</a> </li>
                                             </ul>
                                         </div>
