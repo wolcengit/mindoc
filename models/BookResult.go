@@ -171,17 +171,16 @@ func (m *BookResult) FindToPager(pageIndex, pageSize int,tab int) (books []*Book
  	sqlpart := ` FROM md_books AS book
 			LEFT JOIN md_relationship AS rel ON rel.book_id = book.book_id AND rel.role_id = 0
 			LEFT JOIN md_members AS m ON rel.member_id = m.member_id  `
-
-	sql1 := `SELECT count(*) AS total_count ` + sqlpart
 	if tab == 0 {
-		sql1 += ` WHERE book.privately_owned = 0 AND book.link_book = 0 `
+		sqlpart += ` WHERE book.privately_owned = 0 AND book.link_book = 0 `
 	}else if tab == 1 {
-		sql1 += ` WHERE book.privately_owned = 1 AND book.link_book = 0  `
+		sqlpart += ` WHERE book.privately_owned = 1 AND book.link_book = 0  `
 	}else if tab == 2 {
-		sql1 += ` WHERE book.privately_owned = 0 AND book.link_book > 0 `
+		sqlpart += ` WHERE book.privately_owned = 0 AND book.link_book > 0 `
 	}else if tab == 3 {
-		sql1 += ` WHERE book.privately_owned = 1 AND book.link_book > 0 `
+		sqlpart += ` WHERE book.privately_owned = 1 AND book.link_book > 0 `
 	}
+	sql1 := `SELECT count(*) AS total_count ` + sqlpart
 	err = o.Raw(sql1).QueryRow(&totalCount)
 
 	if err != nil {
@@ -189,14 +188,7 @@ func (m *BookResult) FindToPager(pageIndex, pageSize int,tab int) (books []*Book
 	}
 
 	sql2 := `SELECT book.*,rel.relationship_id,rel.role_id,m.account AS create_name,m.real_name` + sqlpart
-	if tab == 0 {
-		sql2 += ` WHERE book.privately_owned = 0 `
-	}else if tab == 1 {
-		sql2 += ` WHERE book.privately_owned = 1 `
-	}else if tab == 2 {
-		sql2 += ` WHERE book.link_book > 0 `
-	}
-	sql2 += `ORDER BY book.order_index DESC ,book.book_id DESC  LIMIT ?,?`
+	sql2 += ` ORDER BY book.order_index DESC ,book.book_id DESC  LIMIT ?,?`
 
 	offset := (pageIndex - 1) * pageSize
 
