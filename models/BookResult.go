@@ -174,11 +174,13 @@ func (m *BookResult) FindToPager(pageIndex, pageSize int,tab int) (books []*Book
 
 	sql1 := `SELECT count(*) AS total_count ` + sqlpart
 	if tab == 0 {
-		sql1 += ` WHERE book.privately_owned = 0 `
+		sql1 += ` WHERE book.privately_owned = 0 AND book.link_book = 0 `
 	}else if tab == 1 {
-		sql1 += ` WHERE book.privately_owned = 1 `
+		sql1 += ` WHERE book.privately_owned = 1 AND book.link_book = 0  `
 	}else if tab == 2 {
-		sql1 += ` WHERE book.link_book > 0 `
+		sql1 += ` WHERE book.privately_owned = 0 AND book.link_book > 0 `
+	}else if tab == 3 {
+		sql1 += ` WHERE book.privately_owned = 1 AND book.link_book > 0 `
 	}
 	err = o.Raw(sql1).QueryRow(&totalCount)
 

@@ -36,7 +36,8 @@
                         <ul class="nav nav-tabs">
                             <li {{if eq $.Tab 0}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=0">公开项目</a></li>
                             <li {{if eq $.Tab 1}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=1">私有项目</a></li>
-                            <li {{if eq $.Tab 2}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=2">链接项目</a></li>
+                            <li {{if eq $.Tab 2}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=2">公开链接</a></li>
+                            <li {{if eq $.Tab 3}}class="active"{{end}}><a href="{{urlfor "ManagerController.Books"}}?tab=3">私有链接</a></li>
                         </ul>
                     </div>
                 </div>
