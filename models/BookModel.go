@@ -345,7 +345,7 @@ func (book *Book) FindToPager(pageIndex, pageSize, memberId int,tab int) (books 
 					as t group by book_id) as team  on team.book_id=book.book_id
 				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
 				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
-				WHERE book.privately_owned = 0 and (rel.role_id >= 0 or team.role_id >= 0) `
+				WHERE book.privately_owned = 0 and (rel.role_id >= 0 or team.role_id >= 0) AND book.member_id = ? `
 	}else if tab == 1 {
 		sqlpart = `FROM md_books AS book
   				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
@@ -356,7 +356,7 @@ func (book *Book) FindToPager(pageIndex, pageSize, memberId int,tab int) (books 
 					as t group by book_id) as team  on team.book_id=book.book_id
 				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
 				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
-				WHERE book.privately_owned = 1 and (rel.role_id = 0 or team.role_id >= 0) `
+				WHERE book.privately_owned = 1 and (rel.role_id = 0 or team.role_id >= 0) AND book.member_id = ? `
 	}else if tab == 2 {
 		sqlpart = `FROM md_books AS book
   				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
@@ -367,12 +367,23 @@ func (book *Book) FindToPager(pageIndex, pageSize, memberId int,tab int) (books 
 					as t group by book_id) as team  on team.book_id=book.book_id
 				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
 				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
-				WHERE book.privately_owned = 1 and (rel.role_id > 0 or team.role_id >= 0) `
+				WHERE book.privately_owned = 1 and (rel.role_id > 0 or team.role_id >= 0) AND book.member_id <> ? AND book.link_book = 0 `
+	}else if tab == 3 {
+		sqlpart = `FROM md_books AS book
+  				LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id AND rel.member_id = ?
+  				LEFT JOIN (select book_id,min(role_id) as role_id
+                   from (select book_id,team_member_id,role_id 
+                         from md_team_relationship as mtr 
+                         left join md_team_member as mtm on mtm.team_id=mtr.team_id and mtm.member_id=? order by role_id desc )
+					as t group by book_id) as team  on team.book_id=book.book_id
+				LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
+				LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
+				WHERE book.privately_owned = 1 and (rel.role_id > 0 or team.role_id >= 0) AND book.member_id <> ? AND book.link_book > 0 `
 	}
 
 	sql1 := `SELECT count(*) AS total_count ` + sqlpart
 
-	err = o.Raw(sql1, memberId, memberId).QueryRow(&totalCount)
+	err = o.Raw(sql1, memberId, memberId, memberId).QueryRow(&totalCount)
 
 	if err != nil {
 		return
@@ -384,7 +395,7 @@ func (book *Book) FindToPager(pageIndex, pageSize, memberId int,tab int) (books 
 	sql2 += sqlpart
 	sql2 += ` ORDER BY book.order_index, book.book_id DESC limit ?,? `
 
-	_, err = o.Raw(sql2, memberId, memberId, offset, pageSize).QueryRows(&books)
+	_, err = o.Raw(sql2, memberId, memberId, memberId, offset, pageSize).QueryRows(&books)
 	if err != nil {
 		logs.Error("分页查询项目列表 => ", err)
 		return

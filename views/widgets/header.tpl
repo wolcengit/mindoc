@@ -43,7 +43,7 @@
                             <li>
                                 <a href="{{urlfor "BlogController.ManageList"}}" title="我的文章"><i class="fa fa-file" aria-hidden="true"></i> 我的文章</a>
                             </li>
-                            {{if eq .Member.Role 0 }}
+                            {{if eq .Member.Role 0 1}}
                             <li>
                                 <a href="{{urlfor "ManagerController.Index"}}" title="管理后台"><i class="fa fa-university" aria-hidden="true"></i> 管理后台</a>
                             </li>

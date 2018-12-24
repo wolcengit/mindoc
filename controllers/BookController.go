@@ -703,7 +703,7 @@ func (c *BookController) Delete() {
 		c.JsonResult(6001, err.Error())
 	}
 
-	if bookResult.RoleId != conf.BookFounder {
+	if bookResult.RoleId != conf.BookFounder && !c.Member.IsAdministrator(){
 		c.JsonResult(6002, "只有创始人才能删除项目")
 	}
 	err = models.NewBook().ThoroughDeleteBook(bookResult.BookId)

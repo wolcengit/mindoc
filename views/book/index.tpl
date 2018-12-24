@@ -47,6 +47,7 @@
                             <li {{if eq $.Tab 0}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=0">公开项目</a></li>
                             <li {{if eq $.Tab 1}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=1">私有项目</a></li>
                             <li {{if eq $.Tab 2}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=2">参与项目</a></li>
+                            <li {{if eq $.Tab 3}}class="active"{{end}}><a href="{{urlfor "BookController.Index"}}?tab=3">参与链接</a></li>
                         </ul>
                     </div>
                 </div>

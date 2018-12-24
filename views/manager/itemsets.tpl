@@ -23,7 +23,7 @@
                 <div class="m-box">
                     <div class="box-head">
                         <strong class="box-title">项目空间管理</strong>
-                    {{if eq .Member.Role 0}}
+                    {{if eq .Member.Role 0 1}}
                         <button type="button" class="btn btn-success btn-sm pull-right" data-toggle="modal" data-target="#addItemsetsDialogModal"><i class="fa fa-plus" aria-hidden="true"></i> 创建项目空间</button>
                     {{end}}
                     </div>
