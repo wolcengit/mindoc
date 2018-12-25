@@ -70,6 +70,7 @@ type BookResult struct {
 	IsDownload       bool   `json:"is_download"`
 	AutoSave         bool   `json:"auto_save"`
 	LinkBook 		 int 	`json:"link_book"`
+	Version          int64  `json:"version"`
 }
 
 func NewBookResult() *BookResult {
@@ -227,6 +228,7 @@ func (m *BookResult) ToBookResult(book Book) *BookResult {
 	m.AutoSave = book.AutoSave == 1
 	m.ItemId = book.ItemId
 	m.LinkBook = book.LinkBook
+	m.Version = book.Version
 
 	if book.Theme == "" {
 		m.Theme = "default"
@@ -257,18 +259,17 @@ func (m *BookResult) ToBookResult(book Book) *BookResult {
 }
 
 //后台转换
-func BackgroundConvert(sessionId string, bookResult *BookResult) error {
+func BackgroundConvert(sessionId string, bookResult *BookResult,outputFormat string) error {
 
 	if err := converter.CheckConvertCommand(); err != nil {
 		beego.Error("检查转换程序失败 -> ", err)
 		return err
 	}
 	err := exportLimitWorkerChannel.LoadOrStore(bookResult.Identify, func() {
-		bookResult.Converter(sessionId)
+		bookResult.ExportBookEXT(sessionId,outputFormat)
 	})
 
 	if err != nil {
-
 		beego.Error("将导出任务加入任务队列失败 -> ", err)
 		return err
 	}
@@ -276,18 +277,66 @@ func BackgroundConvert(sessionId string, bookResult *BookResult) error {
 	return nil
 }
 
-//导出PDF、word等格式
-func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
+func (m *BookResult) DoConvert(tocList  []converter.Toc,tempOutputPath string,outputPath string,outputFormat string) (error) {
 
-	convertBookResult := ConvertBookResult{}
+	ebookConfig := converter.Config{
+		Charset:      "utf-8",
+		Cover:        m.Cover,
+		Timestamp:    time.Now().Format("2006-01-02 15:04:05"),
+		Description:  string(blackfriday.Run([]byte(m.Description))),
+		Footer:       "<p style='color:#8E8E8E;font-size:12px;'>本文档使用 <a href='https://github.com/wolcengit/mindoc' style='text-decoration:none;color:#1abc9c;font-weight:bold;'>MinDoc</a> 构建 <span style='float:right'>- _PAGENUM_ -</span></p>",
+		Header:       "<p style='color:#8E8E8E;font-size:12px;'>_SECTION_</p>",
+		Identifier:   "",
+		Language:     "zh-CN",
+		Creator:      m.CreateName,
+		Publisher:    m.Publisher,
+		Contributor:  m.Publisher,
+		Title:        m.BookName,
+		Format:       []string{outputFormat},
+		FontSize:     "14",
+		PaperSize:    "a4",
+		MarginLeft:   "72",
+		MarginRight:  "72",
+		MarginTop:    "72",
+		MarginBottom: "72",
+		Toc:          tocList,
+		More:         []string{},
+	}
+	if m.Publisher != "" {
+		ebookConfig.Footer = "<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + m.Publisher + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>"
+	}
+	if m.RealName != "" {
+		ebookConfig.Creator = m.RealName
+	}
+
+
+	eBookConverter := &converter.Converter{
+		BasePath:   tempOutputPath,
+		OutputPath: outputPath,
+		Config:     ebookConfig,
+		Debug:      true,
+		ProcessNum: conf.GetExportProcessNum(),
+	}
+
+	os.MkdirAll(eBookConverter.OutputPath, 0766)
+
+	if err := eBookConverter.Convert(); err != nil {
+		beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
+		return err
+	}
+
+
+	return nil
+}
+
+//导出epub
+func (m *BookResult) ExportBookEPUB(sessionId string) (error) {
 
 	outputPath := filepath.Join(conf.GetExportOutputPath(), strconv.Itoa(m.BookId))
-	viewPath := beego.BConfig.WebConfig.ViewsPath
+	bookpath := filepath.Join(outputPath, "output", "book.epub")
+	beego.Info("导出文档........" + bookpath)
 
-	pdfpath := filepath.Join(outputPath, "book.pdf")
-	epubpath := filepath.Join(outputPath, "book.epub")
-	mobipath := filepath.Join(outputPath, "book.mobi")
-	docxpath := filepath.Join(outputPath, "book.docx")
+	viewPath := beego.BConfig.WebConfig.ViewsPath
 
 	//先将转换的文件储存到临时目录
 	tempOutputPath := filepath.Join(os.TempDir(), sessionId, m.Identify, "source") //filepath.Abs(filepath.Join("cache", sessionId))
@@ -307,19 +356,10 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 	}
 	os.MkdirAll(filepath.Join(tempOutputPath, "Images"), 0755)
 
-	//defer os.RemoveAll(strings.TrimSuffix(tempOutputPath,"source"))
-
-	if filetil.FileExists(pdfpath) && filetil.FileExists(epubpath) && filetil.FileExists(mobipath) && filetil.FileExists(docxpath) {
-		convertBookResult.EpubPath = epubpath
-		convertBookResult.MobiPath = mobipath
-		convertBookResult.PDFPath = pdfpath
-		convertBookResult.WordPath = docxpath
-		return convertBookResult, nil
-	}
 
 	docs, err := NewDocument().FindListByBookId(m.BookId)
 	if err != nil {
-		return convertBookResult, err
+		return err
 	}
 
 	tocList := make([]converter.Toc, 0)
@@ -348,39 +388,9 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		}
 	}
 
-	ebookConfig := converter.Config{
-		Charset:      "utf-8",
-		Cover:        m.Cover,
-		Timestamp:    time.Now().Format("2006-01-02 15:04:05"),
-		Description:  string(blackfriday.Run([]byte(m.Description))),
-		Footer:       "<p style='color:#8E8E8E;font-size:12px;'>本文档使用 <a href='https://www.iminho.me' style='text-decoration:none;color:#1abc9c;font-weight:bold;'>MinDoc</a> 构建 <span style='float:right'>- _PAGENUM_ -</span></p>",
-		Header:       "<p style='color:#8E8E8E;font-size:12px;'>_SECTION_</p>",
-		Identifier:   "",
-		Language:     "zh-CN",
-		Creator:      m.CreateName,
-		Publisher:    m.Publisher,
-		Contributor:  m.Publisher,
-		Title:        m.BookName,
-		Format:       []string{"epub", "mobi", "pdf", "docx"},
-		FontSize:     "14",
-		PaperSize:    "a4",
-		MarginLeft:   "72",
-		MarginRight:  "72",
-		MarginTop:    "72",
-		MarginBottom: "72",
-		Toc:          tocList,
-		More:         []string{},
-	}
-	if m.Publisher != "" {
-		ebookConfig.Footer = "<p style='color:#8E8E8E;font-size:12px;'>本文档由 <span style='text-decoration:none;color:#1abc9c;font-weight:bold;'>" + m.Publisher + "</span> 生成<span style='float:right'>- _PAGENUM_ -</span></p>"
-	}
-	if m.RealName != "" {
-		ebookConfig.Creator = m.RealName
-	}
-
 	if tempOutputPath, err = filepath.Abs(tempOutputPath); err != nil {
 		beego.Error("导出目录配置错误：" + err.Error())
-		return convertBookResult, err
+		return err
 	}
 
 	for _, item := range docs {
@@ -389,19 +399,19 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 
 		f, err := os.OpenFile(fpath, os.O_CREATE|os.O_RDWR, 0755)
 		if err != nil {
-			return convertBookResult, err
+			return err
 		}
 		var buf bytes.Buffer
 
 		if err := beego.ExecuteViewPathTemplate(&buf, "document/export.tpl", viewPath, map[string]interface{}{"Model": m, "Lists": item, "BaseUrl": conf.BaseUrl}); err != nil {
-			return convertBookResult, err
+			return err
 		}
 		html := buf.String()
 
 		if err != nil {
 
 			f.Close()
-			return convertBookResult, err
+			return err
 		}
 
 		bufio := bytes.NewReader(buf.Bytes())
@@ -459,7 +469,7 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		html, err = doc.Html()
 		if err != nil {
 			f.Close()
-			return convertBookResult, err
+			return err
 		}
 		f.WriteString(html)
 		f.Close()
@@ -489,50 +499,55 @@ func (m *BookResult) Converter(sessionId string) (ConvertBookResult, error) {
 		beego.Error("复制CSS样式出错 -> static/editor.md/lib/mermaid/mermaid.css", err)
 	}
 
-	eBookConverter := &converter.Converter{
-		BasePath:   tempOutputPath,
-		OutputPath: filepath.Join(strings.TrimSuffix(tempOutputPath, "source"), "output"),
-		Config:     ebookConfig,
-		Debug:      true,
-		ProcessNum: conf.GetExportProcessNum(),
+	m.DoConvert(tocList,tempOutputPath,outputPath,"epub")
+
+	beego.Info("文档转换完成：" + bookpath)
+	return nil
+}
+
+//导出PDF、word等格式
+func (m *BookResult) ExportBookEXT(sessionId string,outputFormat string) (error) {
+
+	outputPath := filepath.Join(conf.GetExportOutputPath(), strconv.Itoa(m.BookId))
+
+	contentpath := filepath.Join(outputPath, "content.epub")
+	bookpath := filepath.Join(outputPath, "output", "book."+outputFormat)
+
+	beego.Info("导出文档........" + bookpath)
+
+	if ! filetil.FileExists(contentpath) {
+		err := m.ExportBookEPUB(sessionId)
+		if err != nil {
+			beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
+			return err
+		}
 	}
 
-	os.MkdirAll(eBookConverter.OutputPath, 0766)
+	if ! filetil.FileExists(bookpath) {
+		tocList := make([]converter.Toc, 0)
+		err := m.DoConvert(tocList,outputPath,outputPath,outputFormat)
+		if err != nil {
+			beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
+			return err
+		}
+	}
+	beego.Info("文档转换完成：" + bookpath)
 
-	if err := eBookConverter.Convert(); err != nil {
-		beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
-		return convertBookResult, err
-	}
-	beego.Info("文档转换完成：" + m.BookName)
+	return nil
 
-	if err := filetil.CopyFile(filepath.Join(eBookConverter.OutputPath, "output", "book.mobi"), mobipath, ); err != nil {
-		beego.Error("复制文档失败 -> ", filepath.Join(eBookConverter.OutputPath, "output", "book.mobi"), err)
-	}
-	if err := filetil.CopyFile(filepath.Join(eBookConverter.OutputPath, "output", "book.pdf"), pdfpath); err != nil {
-		beego.Error("复制文档失败 -> ", filepath.Join(eBookConverter.OutputPath, "output", "book.pdf"), err)
-	}
-	if err := filetil.CopyFile(filepath.Join(eBookConverter.OutputPath, "output", "book.epub"), epubpath); err != nil {
-		beego.Error("复制文档失败 -> ", filepath.Join(eBookConverter.OutputPath, "output", "book.epub"), err)
-	}
-	if err := filetil.CopyFile(filepath.Join(eBookConverter.OutputPath, "output", "book.docx"), docxpath); err != nil {
-		beego.Error("复制文档失败 -> ", filepath.Join(eBookConverter.OutputPath, "output", "book.docx"), err)
-	}
-
-	convertBookResult.MobiPath = mobipath
-	convertBookResult.PDFPath = pdfpath
-	convertBookResult.EpubPath = epubpath
-	convertBookResult.WordPath = docxpath
-
-	return convertBookResult, nil
 }
 
 //导出Markdown原始文件
-func (m *BookResult) ExportMarkdown(sessionId string) (string, error) {
-	outputPath := filepath.Join(conf.WorkingDirectory, "uploads", "books", strconv.Itoa(m.BookId), "book.zip")
+func (m *BookResult) ExportMarkdown(sessionId string) (error) {
 
-	os.MkdirAll(filepath.Dir(outputPath), 0644)
+	outputPath := filepath.Join(conf.GetExportOutputPath(), strconv.Itoa(m.BookId))
+	bookpath := filepath.Join(outputPath, "output", "book.zip")
+	beego.Info("导出文档........" + bookpath)
+
+	os.MkdirAll(filepath.Dir(bookpath), 0644)
 
 	tempOutputPath := filepath.Join(os.TempDir(), sessionId, "markdown")
+	os.MkdirAll(tempOutputPath, 0644)
 
 	defer os.RemoveAll(tempOutputPath)
 
@@ -541,14 +556,17 @@ func (m *BookResult) ExportMarkdown(sessionId string) (string, error) {
 	err := exportMarkdown(tempOutputPath, 0, m.BookId, tempOutputPath, bookUrl)
 
 	if err != nil {
-		return "", err
+		beego.Error("导出Markdown失败->", err)
+		return err
 	}
 
-	if err := ziptil.Compress(outputPath, tempOutputPath); err != nil {
+	if err := ziptil.Compress(bookpath, tempOutputPath); err != nil {
 		beego.Error("导出Markdown失败->", err)
-		return "", err
+		return err
 	}
-	return outputPath, nil
+
+	beego.Info("文档转换完成：" + bookpath)
+	return nil
 }
 
 //递归导出Markdown文档

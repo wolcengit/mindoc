@@ -26,6 +26,7 @@ import (
 	"github.com/lifei6671/mindoc/utils/filetil"
 	"github.com/lifei6671/mindoc/utils/gopool"
 	"github.com/astaxie/beego/logs"
+	"io/ioutil"
 )
 
 // DocumentController struct
@@ -870,45 +871,38 @@ func (c *DocumentController) Export() {
 		if bookResult.Editor != "markdown" {
 			c.ShowErrorPage(500, "当前项目不支持Markdown编辑器")
 		}
-		p, err := bookResult.ExportMarkdown(c.CruSession.SessionID())
-
-		if err != nil {
-			c.ShowErrorPage(500, "导出文档失败")
-		}
-		c.Ctx.Output.Download(p, bookResult.BookName+".zip")
-
-		c.StopRun()
-		return
+		output = "zip"
 	}
 
 	outputPath := filepath.Join(conf.GetExportOutputPath(), strconv.Itoa(bookResult.BookId))
+	bookver := filepath.Join(outputPath, strconv.FormatInt(bookResult.Version,10)+".ver")
+	if !filetil.FileExists(bookver) {
+		os.RemoveAll(outputPath)
+		dirPath := filepath.Dir(bookver)
+		os.MkdirAll(dirPath, 0766)
+		if err := ioutil.WriteFile(bookver, []byte(bookResult.BookName), 0644); err != nil {
+			beego.Error("导出book.ver失败->", err)
+		}
+	}
 
-	pdfpath := filepath.Join(outputPath, "book.pdf")
-	epubpath := filepath.Join(outputPath, "book.epub")
-	mobipath := filepath.Join(outputPath, "book.mobi")
-	docxpath := filepath.Join(outputPath, "book.docx")
-
-	if output == "pdf" && filetil.FileExists(pdfpath) {
-		c.Ctx.Output.Download(pdfpath, bookResult.BookName+".pdf")
+	bookpath := filepath.Join(outputPath,"output", "book."+output)
+	if filetil.FileExists(bookpath) {
+		c.Ctx.Output.Download(bookpath, bookResult.BookName+"."+output)
 		c.Abort("200")
-	} else if output == "epub" && filetil.FileExists(epubpath) {
-		c.Ctx.Output.Download(epubpath, bookResult.BookName+".epub")
+	}
 
+	if output == "zip" {
+		err := bookResult.ExportMarkdown(c.CruSession.SessionID())
+		if err != nil {
+			beego.Error("导出失败->", err)
+			c.ShowErrorPage(500, "导出失败->"+err.Error())
+		}
+		c.Ctx.Output.Download(bookpath, bookResult.BookName+"."+output)
 		c.Abort("200")
-	} else if output == "mobi" && filetil.FileExists(mobipath) {
-		c.Ctx.Output.Download(mobipath, bookResult.BookName+".mobi")
-
-		c.Abort("200")
-	} else if output == "docx" && filetil.FileExists(docxpath) {
-		c.Ctx.Output.Download(docxpath, bookResult.BookName+".docx")
-
-		c.Abort("200")
-
-	} else if output == "pdf" || output == "epub" || output == "docx" || output == "mobi" {
-		if err := models.BackgroundConvert(c.CruSession.SessionID(), bookResult); err != nil && err != gopool.ErrHandlerIsExist {
+	}else if output == "pdf" || output == "epub" || output == "docx" || output == "mobi" {
+		if err := models.BackgroundConvert(c.CruSession.SessionID(), bookResult,output); err != nil && err != gopool.ErrHandlerIsExist {
 			c.ShowErrorPage(500, "导出失败，请查看系统日志")
 		}
-
 		c.ShowErrorPage(200, "文档正在后台转换，请稍后再下载")
 	} else {
 		c.ShowErrorPage(200, "不支持的文件格式")
