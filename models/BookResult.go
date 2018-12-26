@@ -339,7 +339,7 @@ func (m *BookResult) ExportBookEPUB(sessionId string) (error) {
 	viewPath := beego.BConfig.WebConfig.ViewsPath
 
 	//先将转换的文件储存到临时目录
-	tempOutputPath := filepath.Join(os.TempDir(), sessionId, m.Identify, "source") //filepath.Abs(filepath.Join("cache", sessionId))
+	tempOutputPath := filepath.Join(outputPath, "temp","source") //filepath.Join(os.TempDir(), sessionId, m.Identify, "source") //filepath.Abs(filepath.Join("cache", sessionId))
 
 	sourceDir := strings.TrimSuffix(tempOutputPath, "source");
 	if filetil.FileExists(sourceDir) {
@@ -524,8 +524,42 @@ func (m *BookResult) ExportBookEXT(sessionId string,outputFormat string) (error)
 	}
 
 	if ! filetil.FileExists(bookpath) {
+
+		docs, err := NewDocument().FindListByBookId(m.BookId)
+		if err != nil {
+			beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
+			return err
+		}
+
 		tocList := make([]converter.Toc, 0)
-		err := m.DoConvert(tocList,outputPath,outputPath,outputFormat)
+
+		for _, item := range docs {
+			if item.ParentId == 0 {
+				toc := converter.Toc{
+					Id:    item.DocumentId,
+					Link:  strconv.Itoa(item.DocumentId) + ".html",
+					Pid:   item.ParentId,
+					Title: item.DocumentName,
+				}
+
+				tocList = append(tocList, toc)
+			}
+		}
+		for _, item := range docs {
+			if item.ParentId != 0 {
+				toc := converter.Toc{
+					Id:    item.DocumentId,
+					Link:  strconv.Itoa(item.DocumentId) + ".html",
+					Pid:   item.ParentId,
+					Title: item.DocumentName,
+				}
+				tocList = append(tocList, toc)
+			}
+		}
+		//先将转换的文件储存到临时目录
+		tempOutputPath := filepath.Join(outputPath, "temp","source") //filepath.Join(os.TempDir(), sessionId, m.Identify, "source") //filepath.Abs(filepath.Join("cache", sessionId))
+
+		err = m.DoConvert(tocList,tempOutputPath,outputPath,outputFormat)
 		if err != nil {
 			beego.Error("转换文件错误：" + m.BookName + " -> " + err.Error())
 			return err
