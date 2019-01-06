@@ -80,9 +80,9 @@ func (m *LinkDocument) UpdateLinkBookDocuments(book_id int) (err error) {
 		a.member_id = b.member_id,
 		a.modify_time = b.modify_time,
 		a.modify_at = b.modify_at,
-		a.version = b.version 
+		a.version = ? 
 		WHERE a.book_id = ? AND a.link_id = b.document_id `
-	o.Raw(sql, book_id).Exec()
+	o.Raw(sql, time.Now().Unix(),book_id).Exec()
 
 	return nil
 }
