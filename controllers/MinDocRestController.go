@@ -29,6 +29,7 @@ func (c *MinDocRestController) PostContent() {
 	dockey := req.Identify
 	tokenkey := req.Token
 	textmd := req.TextMD
+	texthtml := req.TextHTML
 
 	if doctitle == "" {
 		c.JsonResult(6004, "文档名称不能为空")
@@ -74,12 +75,19 @@ func (c *MinDocRestController) PostContent() {
 	doc.DocumentName = doctitle
 	doc.ParentId = folder.DocumentId
 	doc.Markdown = textmd
-	doc.Content = string(blackfriday.Run([]byte(doc.Markdown)))
+	if texthtml == "nil"{
+		doc.Content = string(blackfriday.Run([]byte(doc.Markdown)))
+	}else{
+		doc.Content = texthtml
+	}
 	doc.Release = ""
 	if err := doc.InsertOrUpdate(); err != nil {
 		beego.Error("InsertOrUpdate => ", err)
 		c.JsonResult(6005, "保存失败")
 	}
+	token.Version = time.Now().Unix()
+	token.Update()
+
 	//减少返回信息
 	doc.Markdown = ""
 	doc.Content = ""
