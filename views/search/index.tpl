@@ -28,8 +28,10 @@
                     <div class="title">
                 {{if eq $item.SearchType "document"}}
                         <a href="{{urlfor "DocumentController.Read" ":key" $item.BookIdentify ":id" $item.Identify}}" title="{{$item.DocumentName}}" target="_blank">{{str2html $item.DocumentName}}</a>
-                 {{else}}
+                {{else if eq $item.SearchType "blog" }}
                         <a href="{{urlfor "BlogController.Index" ":id" $item.DocumentId}}" title="{{$item.DocumentName}}" target="_blank">{{str2html $item.DocumentName}}</a>
+                {{else}}
+                    <a href="{{urlfor "DocumentController.Index" ":key" $item.BookIdentify }}" title="{{$item.DocumentName}}" target="_blank">{{str2html $item.DocumentName}}</a>
                 {{end}}
                     </div>
                     <div class="description">
@@ -38,7 +40,7 @@
                     <div class="source">
                         {{if eq $item.SearchType "document"}}
                         <span class="item">来自项目：<a href="{{urlfor "DocumentController.Index" ":key" $item.BookIdentify}}" target="_blank">{{$item.BookName}}</a></span>
-                        {{else}}
+                        {{else if eq $item.SearchType "blog" }}
                         <span class="item">来自文章：<a href="{{urlfor "BlogController.Index" ":id" $item.DocumentId}}" target="_blank">{{$item.BookName}}</a></span>
                         {{end}}
                         <span class="item">作者：{{$item.Author}}</span>

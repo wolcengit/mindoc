@@ -152,4 +152,7 @@ func init() {
 
 	beego.Router("/mindoc/rest", &controllers.MinDocRestController{}, "post:PostContent")
 
+	beego.Router("/books/:key", &controllers.DocumentController{}, "*:Index")
+	beego.Router("/read/:key", &controllers.DocumentController{}, "*:Index")
+	beego.Router("/read/:key/:id", &controllers.DocumentController{}, "*:Read")
 }

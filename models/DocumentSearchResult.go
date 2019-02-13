@@ -33,14 +33,17 @@ func (m *DocumentSearchResult) FindToPager(keyword string, pageIndex, pageSize, 
 
 	offset := (pageIndex - 1) * pageSize
 
-	keyword = "%" + strings.Replace(keyword," ","%",-1) + "%"
-
+	sql1 := ""
+	sql2 := ""
+	sql3 := ""
+	sql4 := ""
+	sql5 := ""
 	if memberId <= 0 {
-		sql1 := `SELECT count(doc.document_id) as total_count FROM md_documents AS doc
+		sql1 = `SELECT count(doc.document_id) as total_count FROM md_documents AS doc
   LEFT JOIN md_books as book ON doc.book_id = book.book_id
 WHERE book.privately_owned = 0 AND (doc.document_name LIKE ? OR doc.release LIKE ?) `
 
-		sql2 := `SELECT *
+		sql2 = `SELECT *
 FROM (
        SELECT
          doc.document_id,
@@ -79,32 +82,36 @@ FROM (
 ORDER BY create_time DESC
 LIMIT ?, ?;`
 
-		err = o.Raw(sql1, keyword, keyword).QueryRow(&totalCount)
-		if err != nil {
-			beego.Error("查询搜索结果失败 -> ",err)
-			return
-		}
-		sql3 := `       SELECT
+		sql3 = `       SELECT
          count(*)
        FROM md_blogs AS blog
        WHERE blog.blog_status = 'public' AND (blog.blog_release LIKE ? OR blog.blog_title LIKE ?);`
 
-		c := 0
-		err = o.Raw(sql3, keyword, keyword).QueryRow(&c)
-		if err != nil {
-			beego.Error("查询搜索结果失败 -> ",err)
-			return
-		}
+		sql4 = `       SELECT
+         count(*)
+       FROM md_books  
+       WHERE privately_owned = 0 AND book_name LIKE ? ;`
+		sql5 = `SELECT 
+         book.identify  AS document_id,
+         book.modify_time,
+         book.create_time,
+         book.book_name AS document_name,
+         book.identify  AS identify,
+         book.description    AS description,
+         book.identify  AS book_identify,
+         book.book_name,
+         book.member_id,
+         member.account AS author,
+         'book'     AS search_type
+       FROM md_books AS book
+         LEFT JOIN md_members AS member ON book.member_id = member.member_id 
+       WHERE book.privately_owned = 0 AND book.book_name LIKE ? 
+		ORDER BY book.create_time DESC
+		LIMIT ?, ?;`
 
-		totalCount += c
 
-		_, err = o.Raw(sql2, keyword, keyword,keyword,keyword, offset, pageSize).QueryRows(&searchResult)
-		if err != nil {
-			beego.Error("查询搜索结果失败 -> ",err)
-			return
-		}
 	} else {
-		sql1 := `SELECT count(doc.document_id) as total_count FROM md_documents AS doc
+		sql1 = `SELECT count(doc.document_id) as total_count FROM md_documents AS doc
   LEFT JOIN md_books as book ON doc.book_id = book.book_id
   LEFT JOIN md_relationship AS rel ON doc.book_id = rel.book_id AND rel.role_id = 0
   LEFT JOIN md_relationship AS rel1 ON doc.book_id = rel1.book_id AND rel1.member_id = ?
@@ -114,7 +121,7 @@ LIMIT ?, ?;`
 					on team.book_id = book.book_id
 WHERE (book.privately_owned = 0 OR rel1.relationship_id > 0 or team.team_member_id > 0)  AND (doc.document_name LIKE ? OR doc.release LIKE ?) `
 
-		sql2 := `SELECT *
+		sql2 = `SELECT *
 FROM (
        SELECT
          doc.document_id,
@@ -167,28 +174,69 @@ FROM (
 ORDER BY create_time DESC
 LIMIT ?, ?;`
 
-		err = o.Raw(sql1, memberId, memberId, keyword, keyword).QueryRow(&totalCount)
-		if err != nil {
-			return
-		}
-		sql3 := `       SELECT
+		sql3 = `       SELECT
          count(*)
        FROM md_blogs AS blog
        WHERE (blog.blog_status = 'public' OR blog.member_id = ?) AND blog.blog_type = 0 AND
              (blog.blog_release LIKE ? OR blog.blog_title LIKE ?);`
 
-		c := 0
-		err = o.Raw(sql3,memberId, keyword, keyword).QueryRow(&c)
+
+		sql4 = `       SELECT
+         count(*)
+       FROM md_books  
+       WHERE  book_name LIKE ? ;`
+		sql5 = `SELECT 
+         book.identify  AS document_id,
+         book.modify_time,
+         book.create_time,
+         book.book_name AS document_name,
+         book.identify  AS identify,
+         book.description    AS description,
+         book.identify  AS book_identify,
+         book.book_name,
+         book.member_id,
+         member.account AS author,
+         'book'     AS search_type
+       FROM md_books AS book
+         LEFT JOIN md_members AS member ON book.member_id = member.member_id 
+       WHERE  book.book_name LIKE ? 
+       ORDER BY book.create_time DESC
+       LIMIT ?, ?;`
+	}
+	if strings.HasPrefix(keyword,".") {
+		rs := []rune(keyword)
+		lth := len(rs)
+		keyword = string(rs[1:lth])
+		keyword = "%" + strings.Replace(keyword," ","%",-1) + "%"
+
+		err = o.Raw(sql1, memberId, memberId, keyword, keyword).QueryRow(&totalCount)
 		if err != nil {
-			beego.Error("查询搜索结果失败 -> ",err)
+			return
+		}
+		c := 0
+		err = o.Raw(sql3, memberId, keyword, keyword).QueryRow(&c)
+		if err != nil {
+			beego.Error("查询搜索结果失败 -> ", err)
 			return
 		}
 
 		totalCount += c
-		_, err = o.Raw(sql2, memberId, memberId, keyword, keyword,memberId,keyword, keyword, offset, pageSize).QueryRows(&searchResult)
+		_, err = o.Raw(sql2, memberId, memberId, keyword, keyword, memberId, keyword, keyword, offset, pageSize).QueryRows(&searchResult)
 		if err != nil {
 			return
 		}
+	}else{
+		keyword = "%" + strings.Replace(keyword," ","%",-1) + "%"
+
+		err = o.Raw(sql4, keyword).QueryRow(&totalCount)
+		if err != nil {
+			return
+		}
+		_, err = o.Raw(sql5, keyword, offset, pageSize).QueryRows(&searchResult)
+		if err != nil {
+			return
+		}
+
 	}
 	return
 }
