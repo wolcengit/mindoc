@@ -31,6 +31,7 @@ import (
 
 // RegisterDataBase 注册数据库
 func RegisterDataBase() {
+	orm.DefaultRowsLimit = -1
 	if beego.AppConfig.String("runmode") == "dev" {
 		orm.Debug = true
 	}
