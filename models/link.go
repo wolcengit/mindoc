@@ -161,24 +161,14 @@ func (m *LinkDocument) FindToLinksPager(pageIndex, pageSize, booKId int) (books 
 	}
 
 	offset := (pageIndex - 1) * pageSize
-
 	sql2 := `SELECT
           book.*,
-          case when rel.relationship_id  is null then team.role_id else rel.role_id end as role_id,
-          m.account as create_name
+		  (select m.account from md_members as m where m.member_id = 
+           (select rel1.member_id from md_relationship AS rel1 where book.book_id = rel1.book_id AND rel1.role_id = 0)
+          ) as create_name
         FROM md_books AS book
-          LEFT JOIN md_relationship AS rel ON book.book_id = rel.book_id  
-          left join (select book_id,min(role_id) as role_id
-                     from (select book_id,team_member_id,role_id
-                           from md_team_relationship as mtr
-                             left join md_team_member as mtm on mtm.team_id=mtr.team_id  order by role_id desc )
-        					as t group by book_id) as team 
-        			on team.book_id=book.book_id
-          LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
-          LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
-        WHERE book.link_book = ? AND rel.role_id >= 0 or team.role_id >= 0
+        WHERE book.link_book = ?  
         ORDER BY book.order_index, book.book_id DESC limit ?,?`
-
 	_, err = o.Raw(sql2, booKId, offset, pageSize).QueryRows(&books)
 	if err != nil {
 		logs.Error("分页查询项目列表 => ", err)
@@ -196,15 +186,6 @@ func (m *LinkDocument) FindToLinksPager(pageIndex, pageSize, booKId int) (books 
 			err1 := o.Raw(sql, book.BookId).QueryRow(&text)
 			if err1 == nil {
 				books[index].LastModifyText = text.Account + " 于 " + text.ModifyTime.Format("2006-01-02 15:04:05")
-			}
-			if book.RoleId == 0 {
-				book.RoleName = "创始人"
-			} else if book.RoleId == 1 {
-				book.RoleName = "管理员"
-			} else if book.RoleId == 2 {
-				book.RoleName = "编辑者"
-			} else if book.RoleId == 3 {
-				book.RoleName = "观察者"
 			}
 		}
 	}
