@@ -2,30 +2,30 @@ package controllers
 
 import (
 	"encoding/json"
-	"html/template"
-	"net/http"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-	"net/url"
-	"image/png"
 	"fmt"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
 	"github.com/lifei6671/mindoc/conf"
 	"github.com/lifei6671/mindoc/models"
 	"github.com/lifei6671/mindoc/utils"
-	"github.com/lifei6671/mindoc/utils/pagination"
-	"gopkg.in/russross/blackfriday.v2"
 	"github.com/lifei6671/mindoc/utils/cryptil"
 	"github.com/lifei6671/mindoc/utils/filetil"
 	"github.com/lifei6671/mindoc/utils/gopool"
-	"github.com/astaxie/beego/logs"
+	"github.com/lifei6671/mindoc/utils/pagination"
+	"gopkg.in/russross/blackfriday.v2"
+	"html/template"
+	"image/png"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // DocumentController struct
@@ -113,19 +113,21 @@ func (c *DocumentController) Read() {
 
 	if docId, err := strconv.Atoi(id); err == nil {
 		doc, err = doc.FromCacheById(docId)
-		if err != nil {
+		if err != nil || doc == nil {
 			beego.Error("从缓存中读取文档时失败 ->", err)
 			c.ShowErrorPage(404, "文档不存在或已删除")
+			return
 		}
 	} else {
 		doc, err = doc.FromCacheByIdentify(id, bookResult.BookId)
-		if err != nil {
+		if err != nil || doc == nil {
 			if err == orm.ErrNoRows {
 				c.ShowErrorPage(404, "文档不存在或已删除")
 			} else {
 				beego.Error("从缓存查询文档时出错 ->", err)
 				c.ShowErrorPage(500, "未知异常")
 			}
+			return
 		}
 	}
 
@@ -195,12 +197,13 @@ func (c *DocumentController) Edit() {
 		bookResult, err = models.NewBookResult().FindByIdentify(identify, c.Member.MemberId)
 
 		if err != nil {
-			if err == orm.ErrNoRows || err == models.ErrPermissionDenied{
+			if err == orm.ErrNoRows || err == models.ErrPermissionDenied {
 				c.ShowErrorPage(403, "项目不存在或没有权限")
 			} else {
 				beego.Error("查询项目时出错 -> ", err)
 				c.ShowErrorPage(500, "查询项目时出错")
 			}
+			return
 		}
 		if bookResult.RoleId == conf.BookObserver {
 			c.JsonResult(6002, "项目不存在或权限不足")
@@ -316,6 +319,8 @@ func (c *DocumentController) Create() {
 
 	if isOpen == 1 {
 		document.IsOpen = 1
+	} else if isOpen == 2 {
+		document.IsOpen = 2
 	} else {
 		document.IsOpen = 0
 	}
@@ -341,11 +346,12 @@ func (c *DocumentController) Upload() {
 	name := "editormd-file-file"
 
 	file, moreFile, err := c.GetFile(name)
-	if err == http.ErrMissingFile {
+	if err == http.ErrMissingFile || moreFile == nil {
 		name = "editormd-image-file"
 		file, moreFile, err = c.GetFile(name)
-		if err == http.ErrMissingFile {
+		if err == http.ErrMissingFile || moreFile == nil {
 			c.JsonResult(6003, "没有发现需要上传的文件")
+			return
 		}
 	}
 
@@ -419,7 +425,7 @@ func (c *DocumentController) Upload() {
 	filePath := filepath.Join(conf.WorkingDirectory, "uploads", identify)
 
 	//将图片和文件分开存放
-	if strings.EqualFold(ext, ".jpg") || strings.EqualFold(ext, ".jpeg") || strings.EqualFold(ext, ".png") || strings.EqualFold(ext, ".gif") {
+	if filetil.IsImageExt(moreFile.Filename) {
 		filePath = filepath.Join(filePath, "images", fileName+ext)
 	} else {
 		filePath = filepath.Join(filePath, "files", fileName+ext)
@@ -427,7 +433,7 @@ func (c *DocumentController) Upload() {
 
 	path := filepath.Dir(filePath)
 
-	os.MkdirAll(path, os.ModePerm)
+	_ = os.MkdirAll(path, os.ModePerm)
 
 	err = c.SaveToFile(name, filePath)
 
@@ -452,7 +458,7 @@ func (c *DocumentController) Upload() {
 		attachment.DocumentId = docId
 	}
 
-	if strings.EqualFold(ext, ".jpg") || strings.EqualFold(ext, ".jpeg") || strings.EqualFold(ext, ".png") || strings.EqualFold(ext, ".gif") {
+	if filetil.IsImageExt(moreFile.Filename) {
 		attachment.HttpPath = "/" + strings.Replace(strings.TrimPrefix(filePath, conf.WorkingDirectory), "\\", "/", -1)
 		if strings.HasPrefix(attachment.HttpPath, "//") {
 			attachment.HttpPath = conf.URLForWithCdnImage(string(attachment.HttpPath[1:]))
@@ -674,8 +680,9 @@ func (c *DocumentController) Content() {
 	// 如果是超级管理员，则忽略权限
 	if c.Member.IsAdministrator() {
 		book, err := models.NewBook().FindByFieldFirst("identify", identify)
-		if err != nil {
+		if err != nil || book == nil {
 			c.JsonResult(6002, "项目不存在或权限不足")
+			return
 		}
 
 		bookId = book.BookId
@@ -704,8 +711,9 @@ func (c *DocumentController) Content() {
 
 		doc, err := models.NewDocument().Find(docId)
 
-		if err != nil {
+		if err != nil || doc == nil {
 			c.JsonResult(6003, "读取文档错误")
+			return
 		}
 
 		if doc.BookId != bookId {
@@ -737,6 +745,7 @@ func (c *DocumentController) Content() {
 
 		doc.Version = time.Now().Unix()
 		doc.Content = content
+		doc.ModifyAt = c.Member.MemberId
 
 		if err := doc.InsertOrUpdate(); err != nil {
 			beego.Error("InsertOrUpdate => ", err)
@@ -770,6 +779,7 @@ func (c *DocumentController) Content() {
 	doc, err := models.NewDocument().Find(docId)
 	if err != nil {
 		c.JsonResult(6003, "文档不存在")
+		return
 	}
 
 	attach, err := models.NewAttachment().FindListByDocumentId(doc.DocumentId)
@@ -780,25 +790,7 @@ func (c *DocumentController) Content() {
 	c.JsonResult(0, "ok", doc)
 }
 
-//
-//func (c *DocumentController) GetDocumentById(id string) (doc *models.Document, err error) {
-//	doc = models.NewDocument()
-//	if doc_id, err := strconv.Atoi(id); err == nil {
-//		doc, err = doc.Find(doc_id)
-//		if err != nil {
-//			return nil, err
-//		}
-//	} else {
-//		doc, err = doc.FindByFieldFirst("identify", id)
-//		if err != nil {
-//			return nil, err
-//		}
-//	}
-//
-//	return doc, nil
-//}
-
-// 导出
+// Export 导出
 func (c *DocumentController) Export() {
 	c.Prepare()
 
@@ -1200,8 +1192,9 @@ func (c *DocumentController) Compare() {
 	}
 
 	doc, err := models.NewDocument().Find(history.DocumentId)
-	if doc.BookId != bookId {
-		c.ShowErrorPage(60002, "参数错误")
+	if err != nil || doc == nil || doc.BookId != bookId {
+		c.ShowErrorPage(60002, "文档不存在或已删除")
+		return
 	}
 
 	c.Data["HistoryId"] = historyId
@@ -1237,39 +1230,43 @@ func (c *DocumentController) isReadable(identify, token string) *models.BookResu
 	}
 	// 如果文档是私有的
 	if book.PrivatelyOwned == 1 && (!c.isUserLoggedIn() || !c.Member.IsAdministrator()) {
+		if s, ok := c.GetSession(identify).(string); !ok || (!strings.EqualFold(s, book.PrivateToken) && !strings.EqualFold(s, book.BookPassword)) {
 
-		if book.PrivateToken != "" && !isOk && token != "" {
-			// 如果有访问的 Token，并且该项目设置了访问 Token，并且和用户提供的相匹配，则记录到 Session 中。
-			// 如果用户未提供 Token 且用户登录了，则判断用户是否参与了该项目。
-			// 如果用户未登录，则从 Session 中读取 Token。
-			if token != "" && strings.EqualFold(token, book.PrivateToken) {
-				c.SetSession(identify, token)
-			} else if token, ok := c.GetSession(identify).(string); !ok || !strings.EqualFold(token, book.PrivateToken) {
-				c.ShowErrorPage(403, "权限不足")
-			}
-		} else if password := c.GetString("bPassword", "");!isOk && book.BookPassword != "" && password != ""{
-
-			//如果设置了密码，则判断密码是否正确
-			if book.BookPassword != password {
-				c.JsonResult(5001, "密码错误")
-			} else {
-				c.SetSession(identify, password)
-				c.JsonResult(0,"OK")
-			}
-
-		} else if !isOk {
-			//如果设置了密码，则显示密码输入页面
-			if book.BookPassword != "" {
-				//判断已存在的密码是否正确
-				if password, ok := c.GetSession(identify).(string); !ok || !strings.EqualFold(password, book.BookPassword) {
-					body, err := c.ExecuteViewPathTemplate("document/document_password.tpl", map[string]string{"Identify": book.Identify});
-					if err != nil {
-						beego.Error("显示密码页面失败 ->", err)
-					}
-					c.CustomAbort(200, body)
+			if book.PrivateToken != "" && !isOk && token != "" {
+				// 如果有访问的 Token，并且该项目设置了访问 Token，并且和用户提供的相匹配，则记录到 Session 中。
+				// 如果用户未提供 Token 且用户登录了，则判断用户是否参与了该项目。
+				// 如果用户未登录，则从 Session 中读取 Token。
+				if token != "" && strings.EqualFold(token, book.PrivateToken) {
+					c.SetSession(identify, token)
+				} else if token, ok := c.GetSession(identify).(string); !ok || !strings.EqualFold(token, book.PrivateToken) {
+					beego.Info("尝试访问文档但权限不足 ->", identify, token)
+					c.ShowErrorPage(403, "权限不足")
 				}
-			} else {
-				c.ShowErrorPage(403, "权限不足")
+			} else if password := c.GetString("bPassword", ""); !isOk && book.BookPassword != "" && password != "" {
+
+				//如果设置了密码，则判断密码是否正确
+				if book.BookPassword != password {
+					c.JsonResult(5001, "密码错误")
+				} else {
+					c.SetSession(identify, password)
+					c.JsonResult(0, "OK")
+				}
+
+			} else if !isOk {
+				//如果设置了密码，则显示密码输入页面
+				if book.BookPassword != "" {
+					//判断已存在的密码是否正确
+					if password, ok := c.GetSession(identify).(string); !ok || !strings.EqualFold(password, book.BookPassword) {
+						body, err := c.ExecuteViewPathTemplate("document/document_password.tpl", map[string]string{"Identify": book.Identify});
+						if err != nil {
+							beego.Error("显示密码页面失败 ->", err)
+						}
+						c.CustomAbort(200, body)
+					}
+				} else {
+					beego.Info("尝试访问文档但权限不足 ->", identify, token)
+					c.ShowErrorPage(403, "权限不足")
+				}
 			}
 		}
 	}

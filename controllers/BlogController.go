@@ -53,7 +53,7 @@ func (c *BlogController) Index() {
 			c.JsonResult(6001, "文章密码不正确")
 		} else if blog.BlogStatus == "password" && password == blog.Password {
 			//如果密码输入正确，则存入session中
-			c.CruSession.Set(blogReadSession, blogId)
+			_ = c.CruSession.Set(blogReadSession, blogId)
 			c.JsonResult(0, "OK")
 		}
 		c.JsonResult(0, "OK")
@@ -61,8 +61,11 @@ func (c *BlogController) Index() {
 		//如果不存在已输入密码的标记
 		c.TplName = "blog/index_password.tpl"
 	}
-	//加载文章附件
-	blog.LinkAttach();
+	if blog.BlogType != 1 {
+		//加载文章附件
+		_ = blog.LinkAttach()
+	}
+
 	c.Data["Model"] = blog
 	c.Data["Content"] = template.HTML(blog.BlogRelease)
 
@@ -632,16 +635,18 @@ func (c *BlogController) Download() {
 	attachment, err := models.NewAttachment().Find(attachId)
 
 	if err != nil {
-		beego.Error("DownloadAttachment => ", err)
 		if err == orm.ErrNoRows {
 			c.ShowErrorPage(404, "附件不存在")
 		} else {
+			beego.Error("查询附件时出现异常 -> ", err)
 			c.ShowErrorPage(500, "查询附件时出现异常")
 		}
 	}
-	if blog.BlogType == 1 && attachment.BookId != blog.BookId && attachment.DocumentId != blog.DocumentId {
+
+	//如果是链接的文章，需要校验文档ID是否一致，如果不是，需要保证附件的项目ID为0且文档的ID等于博文ID
+	if blog.BlogType == 1 && attachment.DocumentId != blog.DocumentId {
 		c.ShowErrorPage(404, "附件不存在")
-	} else if attachment.BookId != 0 || attachment.DocumentId != blogId {
+	} else if blog.BlogType != 1 && (attachment.BookId != 0 || attachment.DocumentId != blogId ) {
 		c.ShowErrorPage(404, "附件不存在")
 	}
 
