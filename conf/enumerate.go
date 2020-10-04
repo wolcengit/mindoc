@@ -215,7 +215,7 @@ func URLFor(endpoint string, values ...interface{}) string {
 	if baseUrl == "" {
 		baseUrl = BaseUrl
 	}
-	if strings.HasPrefix(pathUrl, "http://") {
+	if strings.HasPrefix(pathUrl, "http://") || strings.HasPrefix(pathUrl, "https://") { 
 		return pathUrl
 	}
 	if strings.HasPrefix(pathUrl, "/") && strings.HasSuffix(baseUrl, "/") {
@@ -234,7 +234,7 @@ func URLForNotHost(endpoint string,values ...interface{}) string  {
 	if baseUrl == "" {
 		baseUrl = "/"
 	}
-	if strings.HasPrefix(pathUrl, "http://") {
+	if strings.HasPrefix(pathUrl, "http://") || strings.HasPrefix(pathUrl, "https://") { 
 		return pathUrl
 	}
 	if strings.HasPrefix(pathUrl, "/") && strings.HasSuffix(baseUrl, "/") {

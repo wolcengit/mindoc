@@ -1,5 +1,5 @@
 #!/bin/bash
 
-export TAG=Z3.18
-docker build -t wolcen/mindoc:$TAG  .
-docker push wolcen/mindoc:$TAG
+export TAG=Z3.22
+sudo docker build -t wolcen/mindoc:$TAG  .
+sudo docker push wolcen/mindoc:$TAG
