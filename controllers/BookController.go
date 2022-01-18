@@ -36,7 +36,7 @@ func (c *BookController) Index() {
 	tab, _ := c.GetInt("tab", 0)
 	pageIndex, _ := c.GetInt("page", 1)
 
-	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId,tab)
+	books, totalCount, err := models.NewBook().FindToPager(pageIndex, conf.PageSize, c.Member.MemberId, tab)
 
 	if err != nil {
 		logs.Error("BookController.Index => ", err)
@@ -150,6 +150,22 @@ func (c *BookController) SaveBook() {
 	isUseFirstDocument := strings.TrimSpace(c.GetString("is_use_first_document")) == "on"
 	autoSave := strings.TrimSpace(c.GetString("auto_save")) == "on"
 	itemId, _ := c.GetInt("itemId")
+	identify := strings.TrimSpace(c.GetString("new_identify", ""))
+
+	if identify != book.Identify {
+		var book1 models.Book
+
+		err := models.NewBook().QueryTable().Filter("identify", identify).One(&book1)
+		if err != nil {
+			if err != orm.ErrNoRows {
+				c.JsonResult(6003, "新标识不正确，请重新输入")
+			}
+		}else{
+			if book1.BookId != book.BookId {
+				c.JsonResult(6003, "新标识不正确，请重新输入")
+			}
+		}
+	}
 
 	if strings.Count(description, "") > 500 {
 		c.JsonResult(6004, "项目描述不能大于500字")
@@ -180,6 +196,7 @@ func (c *BookController) SaveBook() {
 	book.IsDownload = 0
 	book.BookPassword = strings.TrimSpace(c.GetString("bPassword"))
 	book.ItemId = itemId
+	book.Identify = identify
 
 	if autoRelease {
 		book.AutoRelease = 1
@@ -703,7 +720,7 @@ func (c *BookController) Delete() {
 		c.JsonResult(6001, err.Error())
 	}
 
-	if bookResult.RoleId != conf.BookFounder && !c.Member.IsAdministrator(){
+	if bookResult.RoleId != conf.BookFounder && !c.Member.IsAdministrator() {
 		c.JsonResult(6002, "只有创始人才能删除项目")
 	}
 	err = models.NewBook().ThoroughDeleteBook(bookResult.BookId)

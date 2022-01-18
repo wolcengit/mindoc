@@ -65,6 +65,11 @@
                                 <p class="text">项目标识用来标记项目的唯一性，不可修改。</p>
                             </div>
                             <div class="form-group">
+                                <label>新标识</label>
+                                <input type="text" class="form-control" name="new_identify" value="{{.Model.Identify}}" placeholder="新标识">
+                                <p class="text">标识唯一，不修改保持数据不变即可 <>
+                            </div>
+                            <div class="form-group">
                                 <label>项目空间</label>
                                 <select class="js-data-example-ajax form-control" multiple="multiple" name="itemId">
                                     <option value="{{.Model.ItemId}}" selected="selected">{{.Model.ItemName}}</option>
@@ -397,7 +402,7 @@
                 if(res.errcode === 0){
                     showSuccess("保存成功")
                 }else{
-                    showError("保存失败")
+                    showError("保存失败:"+res.message)
                 }
                 $("#btnSaveBookInfo").button("reset");
             },
