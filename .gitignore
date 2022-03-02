@@ -20,9 +20,12 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+mindoc
+database
 *.test
 *.prof
 .idea
+.vscode
 /conf/app.conf
 /vendor
 /runtime

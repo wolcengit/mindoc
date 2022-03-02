@@ -5,14 +5,14 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/astaxie/beego/session/memcache"
-	_ "github.com/astaxie/beego/session/mysql"
-	_ "github.com/astaxie/beego/session/redis"
+	_ "github.com/beego/beego/v2/server/web/session/memcache"
+	_ "github.com/beego/beego/v2/server/web/session/mysql"
+	_ "github.com/beego/beego/v2/server/web/session/redis"
 	"github.com/kardianos/service"
-	"github.com/lifei6671/mindoc/commands"
-	"github.com/lifei6671/mindoc/commands/daemon"
-	_ "github.com/lifei6671/mindoc/routers"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mindoc-org/mindoc/commands"
+	"github.com/mindoc-org/mindoc/commands/daemon"
+	_ "github.com/mindoc-org/mindoc/routers"
 )
 
 func main() {

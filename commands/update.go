@@ -7,24 +7,26 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/astaxie/beego"
-	"github.com/lifei6671/mindoc/conf"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/mindoc-org/mindoc/conf"
 )
 
 //检查最新版本.
 func CheckUpdate() {
 
-	resp, err := http.Get("https://api.github.com/repos/lifei6671/mindoc/tags")
+	fmt.Println("MinDoc current version => ", conf.VERSION)
+
+	resp, err := http.Get("https://api.github.com/repos/mindoc-org/mindoc/tags")
 
 	if err != nil {
-		beego.Error("CheckUpdate => ", err)
+		logs.Error("CheckUpdate => ", err)
 		os.Exit(1)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		beego.Error("CheckUpdate => ", err)
+		logs.Error("CheckUpdate => ", err)
 		os.Exit(1)
 	}
 
@@ -33,9 +35,8 @@ func CheckUpdate() {
 	}
 
 	err = json.Unmarshal(body, &result)
-	fmt.Println("MinDoc current version => ", conf.VERSION)
 	if err != nil {
-		beego.Error("CheckUpdate => ", err)
+		logs.Error("CheckUpdate => ", err)
 		os.Exit(0)
 	}
 

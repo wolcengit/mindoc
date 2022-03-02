@@ -2,11 +2,12 @@ package controllers
 
 import (
 	"math"
-	"github.com/astaxie/beego"
-	"github.com/lifei6671/mindoc/models"
-	"github.com/lifei6671/mindoc/utils/pagination"
-	"github.com/lifei6671/mindoc/conf"
 	"net/url"
+
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/mindoc-org/mindoc/conf"
+	"github.com/mindoc-org/mindoc/models"
+	"github.com/mindoc-org/mindoc/utils/pagination"
 )
 
 type HomeController struct {
@@ -27,16 +28,13 @@ func (c *HomeController) Index() {
 
 	pageIndex, _ := c.GetInt("page", 1)
 	pageSize := 18
-
 	memberId := 0
-
 	if c.Member != nil {
 		memberId = c.Member.MemberId
 	}
 	books, totalCount, err := models.NewBook().FindForHomeToPager(pageIndex, pageSize, memberId)
-
 	if err != nil {
-		beego.Error(err)
+		logs.Error(err)
 		c.Abort("500")
 	}
 	if totalCount > 0 {
@@ -46,6 +44,5 @@ func (c *HomeController) Index() {
 		c.Data["PageHtml"] = ""
 	}
 	c.Data["TotalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
-
 	c.Data["Lists"] = books
 }

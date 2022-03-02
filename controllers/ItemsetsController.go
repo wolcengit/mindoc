@@ -1,16 +1,17 @@
 package controllers
 
 import (
-	"github.com/lifei6671/mindoc/conf"
-	"github.com/lifei6671/mindoc/models"
-	"github.com/astaxie/beego/orm"
-	"github.com/lifei6671/mindoc/utils/pagination"
-	"github.com/astaxie/beego"
+	"github.com/beego/beego/v2/client/orm"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/mindoc-org/mindoc/conf"
+	"github.com/mindoc-org/mindoc/models"
+	"github.com/mindoc-org/mindoc/utils/pagination"
 )
 
 type ItemsetsController struct {
 	BaseController
 }
+
 func (c *ItemsetsController) Prepare() {
 	c.BaseController.Prepare()
 
@@ -65,7 +66,7 @@ func (c *ItemsetsController) List() {
 		if err == orm.ErrNoRows {
 			c.Abort("404")
 		} else {
-			beego.Error(err)
+			logs.Error(err)
 			c.Abort("500")
 		}
 	}

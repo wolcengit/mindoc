@@ -2,27 +2,30 @@ package controllers
 
 import (
 	"bytes"
-
 	"encoding/json"
 	"io"
 	"strings"
 	"time"
 
-	"github.com/astaxie/beego"
-	"github.com/lifei6671/mindoc/conf"
-	"github.com/lifei6671/mindoc/models"
-	"github.com/lifei6671/mindoc/utils"
-	"path/filepath"
-	"io/ioutil"
 	"html/template"
+	"io/ioutil"
+	"path/filepath"
+
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/beego/beego/v2/server/web"
+	"github.com/beego/i18n"
+	"github.com/mindoc-org/mindoc/conf"
+	"github.com/mindoc-org/mindoc/models"
+	"github.com/mindoc-org/mindoc/utils"
 )
 
 type BaseController struct {
-	beego.Controller
+	web.Controller
 	Member                *models.Member
 	Option                map[string]string
 	EnableAnonymous       bool
 	EnableDocumentHistory bool
+	Lang                  string
 }
 
 type CookieRemember struct {
@@ -44,7 +47,6 @@ func (c *BaseController) Prepare() {
 	c.EnableDocumentHistory = false
 
 	if member, ok := c.GetSession(conf.LoginSessionName).(models.Member); ok && member.MemberId > 0 {
-
 		c.Member = &member
 		c.Data["Member"] = c.Member
 	} else {
@@ -72,15 +74,17 @@ func (c *BaseController) Prepare() {
 		c.EnableAnonymous = strings.EqualFold(c.Option["ENABLE_ANONYMOUS"], "true")
 		c.EnableDocumentHistory = strings.EqualFold(c.Option["ENABLE_DOCUMENT_HISTORY"], "true")
 	}
-	c.Data["HighlightStyle"] = beego.AppConfig.DefaultString("highlight_style", "github")
+	c.Data["HighlightStyle"] = web.AppConfig.DefaultString("highlight_style", "github")
 
-	if b, err := ioutil.ReadFile(filepath.Join(beego.BConfig.WebConfig.ViewsPath, "widgets", "scripts.tpl")); err == nil {
+	if b, err := ioutil.ReadFile(filepath.Join(web.BConfig.WebConfig.ViewsPath, "widgets", "scripts.tpl")); err == nil {
 		c.Data["Scripts"] = template.HTML(string(b))
 	}
 
+	c.SetLang()
 }
+
 //判断用户是否登录.
-func (c *BaseController)isUserLoggedIn() bool {
+func (c *BaseController) isUserLoggedIn() bool {
 	return c.Member != nil && c.Member.MemberId > 0
 }
 
@@ -109,20 +113,22 @@ func (c *BaseController) JsonResult(errCode int, errMsg string, data ...interfac
 	}
 
 	returnJSON, err := json.Marshal(jsonData)
-
 	if err != nil {
-		beego.Error(err)
+		logs.Error(err)
 	}
 
 	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 	c.Ctx.ResponseWriter.Header().Set("Cache-Control", "no-cache, no-store")
-	io.WriteString(c.Ctx.ResponseWriter, string(returnJSON))
+	_, err = io.WriteString(c.Ctx.ResponseWriter, string(returnJSON))
+	if err != nil {
+		logs.Error(err)
+	}
 
 	c.StopRun()
 }
 
 //如果错误不为空，则响应错误信息到浏览器.
-func (c *BaseController) CheckJsonError(code int,err error) {
+func (c *BaseController) CheckJsonError(code int, err error) {
 
 	if err == nil {
 		return
@@ -133,14 +139,16 @@ func (c *BaseController) CheckJsonError(code int,err error) {
 	jsonData["message"] = err.Error()
 
 	returnJSON, err := json.Marshal(jsonData)
-
 	if err != nil {
-		beego.Error(err)
+		logs.Error(err)
 	}
 
 	c.Ctx.ResponseWriter.Header().Set("Content-Type", "application/json; charset=utf-8")
 	c.Ctx.ResponseWriter.Header().Set("Cache-Control", "no-cache, no-store")
-	io.WriteString(c.Ctx.ResponseWriter, string(returnJSON))
+	_, err = io.WriteString(c.Ctx.ResponseWriter, string(returnJSON))
+	if err != nil {
+		logs.Error(err)
+	}
 
 	c.StopRun()
 }
@@ -152,18 +160,18 @@ func (c *BaseController) ExecuteViewPathTemplate(tplName string, data interface{
 	viewPath := c.ViewPath
 
 	if c.ViewPath == "" {
-		viewPath = beego.BConfig.WebConfig.ViewsPath
+		viewPath = web.BConfig.WebConfig.ViewsPath
 
 	}
 
-	if err := beego.ExecuteViewPathTemplate(&buf, tplName, viewPath, data); err != nil {
+	if err := web.ExecuteViewPathTemplate(&buf, tplName, viewPath, data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
 }
 
 func (c *BaseController) BaseUrl() string {
-	baseUrl := beego.AppConfig.DefaultString("baseurl", "")
+	baseUrl := web.AppConfig.DefaultString("baseurl", "")
 	if baseUrl != "" {
 		if strings.HasSuffix(baseUrl, "/") {
 			baseUrl = strings.TrimSuffix(baseUrl, "/")
@@ -183,7 +191,7 @@ func (c *BaseController) ShowErrorPage(errCode int, errMsg string) {
 
 	var buf bytes.Buffer
 
-	if err := beego.ExecuteViewPathTemplate(&buf, "errors/error.tpl", beego.BConfig.WebConfig.ViewsPath, map[string]interface{}{"ErrorMessage": errMsg, "ErrorCode": errCode, "BaseUrl": conf.BaseUrl}); err != nil {
+	if err := web.ExecuteViewPathTemplate(&buf, "errors/error.tpl", web.BConfig.WebConfig.ViewsPath, map[string]interface{}{"ErrorMessage": errMsg, "ErrorCode": errCode, "BaseUrl": conf.BaseUrl}); err != nil {
 		c.Abort("500")
 	}
 	if errCode >= 200 && errCode <= 510 {
@@ -193,9 +201,26 @@ func (c *BaseController) ShowErrorPage(errCode int, errMsg string) {
 	}
 }
 
-
-func (c *BaseController) CheckErrorResult(code int,err error) {
+func (c *BaseController) CheckErrorResult(code int, err error) {
 	if err != nil {
 		c.ShowErrorPage(code, err.Error())
 	}
+}
+
+func (c *BaseController) SetLang() {
+	hasCookie := false
+	lang := c.GetString("lang")
+	if len(lang) == 0 {
+		lang = c.Ctx.GetCookie("lang")
+		hasCookie = true
+	}
+	if len(lang) == 0 ||
+		!i18n.IsExist(lang) {
+		lang, _ = web.AppConfig.String("default_lang")
+	}
+	if !hasCookie {
+		c.Ctx.SetCookie("lang", lang, 1<<31-1, "/")
+	}
+	c.Data["Lang"] = lang
+	c.Lang = lang
 }

@@ -1,17 +1,37 @@
 # MinDoc 简介
 
-[![Build Status](https://travis-ci.org/lifei6671/mindoc.svg?branch=master)](https://travis-ci.org/lifei6671/mindoc)
-[![Build status](https://ci.appveyor.com/api/projects/status/ik70whjrioyvfy18/branch/master?svg=true)](https://ci.appveyor.com/project/lifei6671/godoc/branch/master)
+[![Build Status](https://travis-ci.com/mindoc-org/mindoc.svg?branch=master)](https://travis-ci.com/mindoc-org/mindoc)
+[![Build status](https://ci.appveyor.com/api/projects/status/o3lcfmf5iy2cp9m6?svg=true)](https://ci.appveyor.com/project/gsw945/mindoc)
 
 MinDoc 是一款针对IT团队开发的简单好用的文档管理系统。
 
-MinDoc 的前身是 SmartWiki 文档系统。SmartWiki 是基于 PHP 框架 laravel 开发的一款文档管理系统。因 PHP 的部署对普通用户来说太复杂，所以改用 Golang 开发。可以方便用户部署和实用。
+MinDoc 的前身是 [SmartWiki](https://github.com/lifei6671/SmartWiki) 文档系统。SmartWiki 是基于 PHP 框架 laravel 开发的一款文档管理系统。因 PHP 的部署对普通用户来说太复杂，所以改用 Golang 开发。可以方便用户部署和实用。
 
 开发缘起是公司IT部门需要一款简单实用的项目接口文档管理和分享的系统。其功能和界面源于 kancloud 。
 
 可以用来储存日常接口文档，数据库字典，手册说明等文档。内置项目管理，用户管理，权限管理等功能，能够满足大部分中小团队的文档管理需求。
 
-演示站点： [http://doc.iminho.me](http://doc.iminho.me)
+##### 演示站点&文档:
+- https://www.iminho.me/wiki/docs/mindoc/
+- https://doc.gsw945.com/docs/mindoc-docs/
+
+---
+
+### 开发&维护&使用 悉知
+
+感谢作者 [lifei6671](https://github.com/lifei6671) 创造了MinDoc，并持续维护了很久。
+
+作者因工作等原因，精力有限，无法花费足够的时间来持续维护mindoc，已于北京时间2021年3月23日将mindoc交给社区(github组织[mindoc-org](https://github.com/mindoc-org))维护，期待热心开发者加入[mindoc-org](https://github.com/mindoc-org)一起来维护MinDoc。
+
+遇到问题请提 [Issues](https://github.com/mindoc-org/mindoc/issues )，欢迎使用者和贡献者加入QQ群 `1051164153`
+<a target="_blank" href="https://qm.qq.com/cgi-bin/qm/qr?k=bHFR7P3Qp1nsSPbsTw4KN_ZpFLUAblIU&jump_from=webapi"><img border="0" src="https://pub.idqqimg.com/wpa/images/group.png" alt="MinDoc使用&amp;开发交流群" title="MinDoc使用&amp;开发交流群"></a>
+
+对开发感兴趣请关注 [Development](https://github.com/mindoc-org/mindoc/projects/1):
+- [Todo List](https://github.com/mindoc-org/mindoc/projects/1#column-13554511)
+- [Work in progress](https://github.com/mindoc-org/mindoc/projects/1#column-13554512)
+- [Review in progress](https://github.com/mindoc-org/mindoc/projects/1#column-13554513)
+
+---
 
 # 安装与使用
 
@@ -19,21 +39,23 @@ MinDoc 的前身是 SmartWiki 文档系统。SmartWiki 是基于 PHP 框架 lara
 
 更多信息请查看手册： [MinDoc 使用手册](https://www.iminho.me/wiki/docs/mindoc/mindoc-summary.md)
 
-对于没有Golang使用经验的用户，可以从 [https://github.com/lifei6671/mindoc/releases](https://github.com/lifei6671/mindoc/releases) 这里下载编译完的程序。
+对于没有Golang使用经验的用户，可以从 [https://github.com/mindoc-org/mindoc/releases](https://github.com/mindoc-org/mindoc/releases) 这里下载编译完的程序。
 
-如果有Golang开发经验，建议通过编译安装，在此之前，您需要先安装Golang官方包管理工具，详见[Install dep](https://golang.github.io/dep/docs/installation.html)。
+如果有Golang开发经验，建议通过编译安装，要求golang版本不小于1.13(需支持`CGO`和`go mod`)。
+> 注意: CentOS7上GLibC版本低，需要源码编译, 编译好的二进制文件无法运行。
 
+## 常规编译
 ```bash
-git clone https://github.com/lifei6671/mindoc.git
-
-dep ensure
-
+# 克隆源码
+git clone https://github.com/mindoc-org/mindoc.git
+# go包安装
+go mod tidy
+# 编译(sqlite需要CGO支持)
 go build -ldflags "-w"
-
+# 数据库初始化(此步骤执行之前，需配置`conf/app.conf`)
 ./mindoc install
-
+# 执行
 ./mindoc
-
 ```
 
 MinDoc 如果使用MySQL储存数据，则编码必须是`utf8mb4_general_ci`。请在安装前，把数据库配置填充到项目目录下的 `conf/app.conf` 中。
@@ -44,10 +66,35 @@ MinDoc 如果使用MySQL储存数据，则编码必须是`utf8mb4_general_ci`。
 
 **默认程序会自动初始化一个超级管理员用户：admin 密码：123456 。请登录后重新设置密码。**
 
+## Linux系统中不依赖gLibC的编译方式
+
+### 安装 musl-gcc
+```bash
+wget -c http://www.musl-libc.org/releases/musl-1.2.2.tar.gz
+tar -xvf musl-1.2.2.tar.gz
+cd musl-1.2.2
+./configure
+make
+sudo make install
+```
+### 使用 musl-gcc 编译 mindoc
+```bash
+go mod tidy -v
+export GOARCH=amd64
+export GOOS=linux
+# 设置使用musl-gcc
+export CC=/usr/local/musl/bin/musl-gcc
+# 设置版本
+export TRAVIS_TAG=temp-musl-v`date +%y%m%d`
+go build -o mindoc_linux_musl_amd64 --ldflags="-linkmode external -extldflags '-static' -w -X 'github.com/mindoc-org/mindoc/conf.VERSION=$TRAVIS_TAG' -X 'github.com/mindoc-org/mindoc/conf.BUILD_TIME=`date`' -X 'github.com/mindoc-org/mindoc/conf.GO_VERSION=`go version`'"
+# 验证
+./mindoc_linux_amd64 version
+```
+
 
 ```bash
 
-#邮件配置
+#邮件配置-示例
 #是否启用邮件
 enable_mail=true
 #smtp服务器的账号
@@ -66,25 +113,42 @@ mail_expired=30
 
 
 # 使用Docker部署
-如果是Docker用户，可参考项目内置的Dockerfile文件编译镜像。
+如果是Docker用户，可参考项目内置的Dockerfile文件自行编译镜像(编译命令见Dockerfile文件底部注释，仅供参考)。
 
-在启动镜像时需要提供如下的环境变量：
-
+在启动镜像时需要提供如下的常用环境变量(全部支持的环境变量请参考: [`conf/app.conf.example`](https://github.com/mindoc-org/mindoc/blob/master/conf/app.conf.example))：
 ```ini
-DB_ADAPTER                  制定 DB
+DB_ADAPTER                  指定DB类型(默认为sqlite)
 MYSQL_PORT_3306_TCP_ADDR    MySQL地址
 MYSQL_PORT_3306_TCP_PORT    MySQL端口号
 MYSQL_INSTANCE_NAME         MySQL数据库名称
 MYSQL_USERNAME              MySQL账号
 MYSQL_PASSWORD              MySQL密码
 HTTP_PORT                   程序监听的端口号
+MINDOC_ENABLE_EXPORT        开启导出(默认为false)
 ```
 
-举个栗子
+### 举个栗子-当前(公开)镜像(信息页面: https://cr.console.aliyun.com/images/cn-hangzhou/mindoc-org/mindoc/detail , 需要登录阿里云账号才可访问列表)
+##### Windows
+```bash
+set MINDOC=//d/mindoc
+docker run -it --name=mindoc --restart=always -v "%MINDOC%":"/mindoc-sync-host" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.1-beta.5
+```
 
+##### Linux、Mac
+```bash
+export MINDOC=/home/ubuntu/mindoc-docker
+docker run -it --name=mindoc --restart=always -v "${MINDOC}":"/mindoc-sync-host" -p 8181:8181 -e MINDOC_ENABLE_EXPORT=true -d registry.cn-hangzhou.aliyuncs.com/mindoc-org/mindoc:v2.1-beta.5
+```
+
+##### 举个栗子-更多环境变量示例(镜像已过期，仅供参考，请以当前镜像为准)
 ```bash
 docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP_ADDR=10.xxx.xxx.xxx -e MYSQL_PORT_3306_TCP_PORT=3306 -e MYSQL_INSTANCE_NAME=mindoc -e MYSQL_USERNAME=root -e MYSQL_PASSWORD=123456 -e httpport=8181 -d daocloud.io/lifei6671/mindoc:latest
 ```
+
+#### dockerfile内容参考
+- [无需代理直接加速各种 GitHub 资源拉取 | 国内镜像赋能 | 助力开发](https://blog.frytea.com/archives/504/)
+- [阿里云 - Ubuntu 镜像](https://developer.aliyun.com/mirror/ubuntu)
+
 ### docker-compose 一键安装
 
 1. 修改配置文件
@@ -92,6 +156,7 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
     `environment`节点，配置自己的环境变量。
     
 2. 一键完成所有环境搭建
+    
     > docker-compose up -d
 3. 浏览器访问
     > http://localhost:8181/
@@ -99,16 +164,21 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
     整个部署完成了
 4. 常用命令参考
    - 启动
+        
         > docker-compose up -d
    - 停止
+        
         > docker-compose stop
    - 重启
+        
         > docker-compose restart
    - 停止删除容器，释放所有资源
+        
         > docker-compose down
    - 删除并重新创建
         > docker-compose -f docker-compose.yml down && docker-compose up -d
-   更多 docker-compose 的使用相关的内容 请查看官网文档或百度
+        > 
+        > 更多 docker-compose 的使用相关的内容 请查看官网文档或百度
    
 # 项目截图
 
@@ -149,23 +219,28 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
 ![超级管理员后台](https://raw.githubusercontent.com/lifei6671/mindoc/master/uploads/20170501204710.png)
 
 
-# 使用的技术
+# 使用的技术(TODO: 最新技术栈整理中，使用的第三方库升级中)
 
-- beego 1.10.0
-- mysql 5.6
-- editor.md Markdown 编辑器
-- bootstrap 3.2
-- jquery 库
-- webuploader 文件上传框架
-- Nprogress 库
-- jstree 树状结构库
-- font awesome 字体库
-- cropper 图片剪裁库
-- layer 弹出层框架
-- highlight 代码高亮库
-- to-markdown HTML转Markdown库
-- quill 富文本编辑器
-- vue 框架
+- [Beego](https://github.com/beego/beego) ~~1.10.0~~
+- MySQL 5.6
+- [editor.md](https://github.com/pandao/editor.md) Markdown 编辑器
+- [Bootstrap](https://github.com/twbs/bootstrap) 3.2
+- [jQuery](https://github.com/jquery/jquery) 库
+- [WebUploader](https://github.com/fex-team/webuploader) 文件上传框架
+- [NProgress](https://github.com/rstacruz/nprogress) 库
+- [jsTree](https://github.com/vakata/jstree) 树状结构库
+- [Font Awesome](https://github.com/FortAwesome/Font-Awesome) 字体库
+- [Cropper](https://github.com/fengyuanchen/cropper) 图片剪裁库
+- [layer](https://github.com/sentsin/layer) 弹出层框架
+- [highlight.js](https://github.com/highlightjs/highlight.js) 代码高亮库
+- ~~to-markdown~~[Turndown](https://github.com/domchristie/turndown) HTML转Markdown库
+- ~~quill 富文本编辑器~~
+- [wangEditor](https://github.com/wangeditor-team/wangEditor) 富文本编辑器
+  - 参考
+    - [wangEditor v4.7 富文本编辑器教程](https://www.bookstack.cn/books/wangeditor-4.7-zh)
+    - [扩展菜单注册太过繁琐 #2493](https://github.com/wangeditor-team/wangEditor/issues/2493)
+  - 工具： `https://babeljs.io/repl` + `@babel/plugin-transform-classes`
+- [Vue.js](https://github.com/vuejs/vue) 框架
 
 
 # 主要功能
@@ -184,10 +259,7 @@ docker run -p 8181:8181 --name mindoc -e DB_ADAPTER=mysql -e MYSQL_PORT_3306_TCP
 
 如果您还不熟悉GitHub的Fork and Pull开发模式，您可以阅读GitHub的文档（https://help.github.com/articles/using-pull-requests） 获得更多的信息。
 
-# 关于作者
+# 关于作者[lifei6671](https://github.com/lifei6671)
 
 一个不纯粹的PHPer，一个不自由的 gopher 。
 
-# 支持 MinDoc
-
-![支付宝](https://raw.githubusercontent.com/lifei6671/mindoc/master/static/images/alipay.png) ![微信支付](https://raw.githubusercontent.com/lifei6671/mindoc/master/static/images/weixin.png)

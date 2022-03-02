@@ -1,11 +1,12 @@
 package models
 
 import (
-	"time"
-	"github.com/lifei6671/mindoc/conf"
-	"github.com/astaxie/beego/orm"
 	"errors"
-	"github.com/astaxie/beego"
+	"time"
+
+	"github.com/beego/beego/v2/client/orm"
+	"github.com/beego/beego/v2/core/logs"
+	"github.com/mindoc-org/mindoc/conf"
 )
 
 //团队.
@@ -47,8 +48,8 @@ func (t *Team) First(id int, cols ...string) (*Team, error) {
 	err := o.QueryTable(t.TableNameWithPrefix()).Filter("team_id", id).One(t, cols...)
 
 	if err != nil {
-		beego.Error("查询团队失败 ->",id, err)
-		return nil,err
+		logs.Error("查询团队失败 ->", id, err)
+		return nil, err
 	}
 	t.Include()
 	return t, err
@@ -58,34 +59,34 @@ func (t *Team) Delete(id int) (err error) {
 	if id <= 0 {
 		return ErrInvalidParameter
 	}
-	o := orm.NewOrm()
+	ormer := orm.NewOrm()
 
-	err = o.Begin()
+	o, err := ormer.Begin()
 
 	if err != nil {
-		beego.Error("开启事物时出错 ->",err)
+		logs.Error("开启事物时出错 ->", err)
 		return
 	}
-	_,err = o.QueryTable(t.TableNameWithPrefix()).Filter("team_id",id).Delete()
+	_, err = o.QueryTable(t.TableNameWithPrefix()).Filter("team_id", id).Delete()
 
 	if err != nil {
-		beego.Error("删除团队时出错 ->", err)
+		logs.Error("删除团队时出错 ->", err)
 		o.Rollback()
 		return
 	}
 
-	_,err = o.Raw("delete from md_team_member where team_id=?;", id).Exec()
+	_, err = o.Raw("delete from md_team_member where team_id=?;", id).Exec()
 
 	if err != nil {
-		beego.Error("删除团队成员时出错 ->", err)
+		logs.Error("删除团队成员时出错 ->", err)
 		o.Rollback()
 		return
 	}
 
-	_,err = o.Raw("delete from md_team_relationship where team_id=?;",id).Exec()
+	_, err = o.Raw("delete from md_team_relationship where team_id=?;", id).Exec()
 
 	if err != nil {
-		beego.Error("删除团队项目时出错 ->", err)
+		logs.Error("删除团队项目时出错 ->", err)
 		o.Rollback()
 		return err
 	}
@@ -112,7 +113,7 @@ func (t *Team) FindToPager(pageIndex, pageSize int) (list []*Team, totalCount in
 	}
 	totalCount = int(c)
 
-	for _,item := range list {
+	for _, item := range list {
 		item.Include()
 	}
 	return
@@ -122,23 +123,23 @@ func (t *Team) Include() {
 
 	o := orm.NewOrm()
 
-	if member,err := NewMember().Find(t.MemberId,"account","real_name"); err == nil {
+	if member, err := NewMember().Find(t.MemberId, "account", "real_name"); err == nil {
 		if member.RealName != "" {
 			t.MemberName = member.RealName
 		} else {
 			t.MemberName = member.Account
 		}
 	}
-	if c,err := o.QueryTable(NewTeamRelationship().TableNameWithPrefix()).Filter("team_id", t.TeamId).Count(); err == nil {
+	if c, err := o.QueryTable(NewTeamRelationship().TableNameWithPrefix()).Filter("team_id", t.TeamId).Count(); err == nil {
 		t.BookCount = int(c)
 	}
-	if c,err := o.QueryTable(NewTeamMember().TableNameWithPrefix()).Filter("team_id", t.TeamId).Count(); err == nil {
+	if c, err := o.QueryTable(NewTeamMember().TableNameWithPrefix()).Filter("team_id", t.TeamId).Count(); err == nil {
 		t.MemberCount = int(c)
 	}
 }
 
 //更新或添加一个团队.
-func (t *Team) Save(cols ... string) (err error) {
+func (t *Team) Save(cols ...string) (err error) {
 	if t.TeamName == "" {
 		return NewError(5001, "团队名称不能为空")
 	}
@@ -154,7 +155,7 @@ func (t *Team) Save(cols ... string) (err error) {
 		_, err = o.Update(t, cols...)
 	}
 	if err != nil {
-		beego.Error("在保存团队时出错 ->", err)
+		logs.Error("在保存团队时出错 ->", err)
 	}
 	return
 }
