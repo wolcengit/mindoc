@@ -34,6 +34,10 @@ import (
 
 // RegisterDataBase 注册数据库
 func RegisterDataBase() {
+	runmode, _ := web.AppConfig.String("runmode")
+	if strings.EqualFold(runmode, "dev") {
+		orm.Debug = true
+	}
 	logs.Info("正在初始化数据库配置.")
 	dbadapter, _ := web.AppConfig.String("db_adapter")
 	orm.DefaultTimeLoc = time.Local

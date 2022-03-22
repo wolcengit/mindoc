@@ -153,6 +153,22 @@ func (c *BookController) SaveBook() {
 	isUseFirstDocument := strings.TrimSpace(c.GetString("is_use_first_document")) == "on"
 	autoSave := strings.TrimSpace(c.GetString("auto_save")) == "on"
 	itemId, _ := c.GetInt("itemId")
+	identify := strings.TrimSpace(c.GetString("new_identify", ""))
+
+	if identify != book.Identify {
+		var book1 models.Book
+
+		err := models.NewBook().QueryTable().Filter("identify", identify).One(&book1)
+		if err != nil {
+			if err != orm.ErrNoRows {
+				c.JsonResult(6003, "新标识不正确，请重新输入")
+			}
+		} else {
+			if book1.BookId != book.BookId {
+				c.JsonResult(6003, "新标识不正确，请重新输入")
+			}
+		}
+	}
 
 	if strings.Count(description, "") > 500 {
 		c.JsonResult(6004, i18n.Tr(c.Lang, "message.project_desc_tips"))
@@ -178,6 +194,7 @@ func (c *BookController) SaveBook() {
 	book.IsDownload = 0
 	book.BookPassword = strings.TrimSpace(c.GetString("bPassword"))
 	book.ItemId = itemId
+	book.Identify = identify
 
 	if autoRelease {
 		book.AutoRelease = 1
@@ -450,6 +467,7 @@ func (c *BookController) Create() {
 		privatelyOwned, _ := strconv.Atoi(c.GetString("privately_owned"))
 		commentStatus := c.GetString("comment_status")
 		itemId, _ := c.GetInt("itemId")
+		linkBook, _ := c.GetInt("link_book")
 
 		if bookName == "" {
 			c.JsonResult(6001, i18n.Tr(c.Lang, "message.project_name_empty"))
@@ -525,6 +543,7 @@ func (c *BookController) Create() {
 		book.IsDownload = 1
 		book.AutoRelease = 0
 		book.ItemId = itemId
+		book.LinkBook = linkBook
 
 		book.Editor = "markdown"
 		book.Theme = "default"
@@ -1016,4 +1035,60 @@ func (c *BookController) IsPermission() (*models.BookResult, error) {
 		return book, errors.New(i18n.Tr(c.Lang, "message.no_permission"))
 	}
 	return book, nil
+}
+
+func (c *BookController) Links() {
+	c.Prepare()
+	c.TplName = "book/links.tpl"
+
+	key := c.Ctx.Input.Param(":key")
+	pageIndex, _ := c.GetInt("page", 1)
+
+	if key == "" {
+		c.ShowErrorPage(404, "项目不存在或已删除")
+	}
+
+	book, err := models.NewBookResult().FindByIdentify(key, c.Member.MemberId)
+	if err != nil {
+		if err == models.ErrPermissionDenied {
+			c.ShowErrorPage(403, "权限不足")
+		}
+		c.ShowErrorPage(500, "系统错误")
+	}
+	//如果不是创始人也不是管理员则不能操作
+	if book.RoleId != conf.BookFounder && book.RoleId != conf.BookAdmin {
+		c.Abort("403")
+	}
+	c.Data["Model"] = book
+
+	books, totalCount, err := models.NewBook().FindToLinksPager(pageIndex, conf.PageSize, book.BookId)
+
+	if err != nil {
+		logs.Error("BookController.Links => ", err)
+		c.Abort("500")
+	}
+
+	for i, book := range books {
+		books[i].Description = utils.StripTags(string(blackfriday.Run([]byte(book.Description))))
+		books[i].ModifyTime = book.ModifyTime.Local()
+		books[i].CreateTime = book.CreateTime.Local()
+	}
+
+	if totalCount > 0 {
+		pager := pagination.NewPagination(c.Ctx.Request, totalCount, conf.PageSize, c.BaseUrl())
+		c.Data["PageHtml"] = pager.HtmlPages()
+	} else {
+		c.Data["PageHtml"] = ""
+	}
+	b, err := json.Marshal(books)
+
+	if err != nil || len(books) <= 0 {
+		c.Data["Result"] = template.JS("[]")
+	} else {
+		c.Data["Result"] = template.JS(string(b))
+	}
+	if itemsets, err := models.NewItemsets().First(1); err == nil {
+		c.Data["Item"] = itemsets
+	}
+
 }

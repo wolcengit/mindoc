@@ -110,6 +110,10 @@ func (c *DocumentController) Read() {
 
 	bookResult := c.isReadable(identify, token)
 
+	if bookResult.LinkBook > 0 {
+		models.NewDocument().UpdateLinkBookDocuments(bookResult.BookId)
+	}
+
 	c.TplName = fmt.Sprintf("document/%s_read.tpl", bookResult.Theme)
 
 	doc := models.NewDocument()
@@ -230,6 +234,10 @@ func (c *DocumentController) Edit() {
 		c.TplName = "document/" + bookResult.Editor + "_edit_template.tpl"
 	}
 
+	if bookResult.LinkBook > 0 {
+		c.TplName = "document/link_edit_template.tpl"
+	}
+
 	c.Data["Model"] = bookResult
 
 	r, _ := json.Marshal(bookResult)
@@ -258,6 +266,23 @@ func (c *DocumentController) Edit() {
 		c.Data["UploadFileSize"] = conf.GetUploadFileSize()
 	} else {
 		c.Data["UploadFileSize"] = "undefined"
+	}
+	if bookResult.LinkBook > 0 {
+		if c.Ctx.Input.IsPost() {
+			link_docs := strings.TrimSpace(c.GetString("link_docs", ""))
+			if link_docs == "" {
+				c.JsonResult(7000, "没有选择任何文档")
+			}
+			models.NewDocument().SetLinkBookDocuments(bookResult.BookId, link_docs)
+		}
+
+		doclinks, docs, err := models.NewDocument().GetLinkBookDocuments(bookResult.BookId)
+		if err != nil {
+			logs.Error(err)
+			c.JsonResult(7000, "保存项目失败")
+		}
+		c.Data["LinkDocLinks"] = doclinks
+		c.Data["LinkDocResult"] = docs
 	}
 }
 

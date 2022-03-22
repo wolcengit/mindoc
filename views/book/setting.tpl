@@ -29,6 +29,9 @@
                     <li><a href="{{urlfor "BookController.Users" ":key" .Model.Identify}}" class="item"><i class="fa fa-user" aria-hidden="true"></i> {{i18n $.Lang "blog.member"}}</a> </li>
                     <li><a href="{{urlfor "BookController.Team" ":key" .Model.Identify}}" class="item"><i class="fa fa-group" aria-hidden="true"></i> {{i18n $.Lang "blog.team"}}</a> </li>
                     <li class="active"><a href="{{urlfor "BookController.Setting" ":key" .Model.Identify}}" class="item"><i class="fa fa-gear" aria-hidden="true"></i> {{i18n $.Lang "common.setting"}}</a> </li>
+                    {{if eq .Model.LinkBook 0}}
+                    <li><a href="{{urlfor "BookController.Links" ":key" .Model.Identify}}" class="item"><i class="fa fa-book" aria-hidden="true"></i> 链接</a> </li>
+                    {{end}}
                 </ul>
 
             </div>
@@ -60,6 +63,11 @@
                                 <label>{{i18n $.Lang "blog.project_id"}}</label>
                                 <input type="text" class="form-control" value="{{urlfor "DocumentController.Index" ":key" .Model.Identify}}" placeholder="{{i18n $.Lang "blog.project_id"}}" disabled>
                                 <p class="text">{{i18n $.Lang "message.project_id_desc"}}</p>
+                            </div>
+                            <div class="form-group">
+                                <label>新标识</label>
+                                <input type="text" class="form-control" name="new_identify" value="{{.Model.Identify}}" placeholder="新标识">
+                                <p class="text">标识唯一，不修改保持数据不变即可 <>
                             </div>
                             <div class="form-group">
                                 <label>{{i18n $.Lang "common.project_space"}}</label>

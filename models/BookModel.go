@@ -83,6 +83,8 @@ type Book struct {
 	IsUseFirstDocument int `orm:"column(is_use_first_document);type(int);default(0)" json:"is_use_first_document"`
 	//是否开启自动保存：0 否/1 是
 	AutoSave int `orm:"column(auto_save);type(tinyint);default(0)" json:"auto_save"`
+	// link book parent
+	LinkBook int `orm:"column(link_book);type(int);default(0)" json:"link_book"`
 }
 
 func (book *Book) String() string {
@@ -1077,3 +1079,49 @@ where mtr.book_id = ? and mtm.member_id = ? order by mtm.role_id asc limit 1;`
 	}
 	return conf.BookRole(roleId), nil
 }
+
+//分页查询指定项目的链接
+func (book *Book) FindToLinksPager(pageIndex, pageSize, booKId int) (books []*BookResult, totalCount int, err error) {
+
+	o := orm.NewOrm()
+
+	sql1 := `SELECT count(*) AS total_count FROM md_books WHERE link_book = ?`
+
+	err = o.Raw(sql1, booKId).QueryRow(&totalCount)
+
+	if err != nil {
+		return
+	}
+
+	offset := (pageIndex - 1) * pageSize
+	sql2 := `SELECT
+          book.*,
+		  (select m.account from md_members as m where m.member_id = 
+           (select rel1.member_id from md_relationship AS rel1 where book.book_id = rel1.book_id AND rel1.role_id = 0)
+          ) as create_name
+        FROM md_books AS book
+        WHERE book.link_book = ?  
+        ORDER BY book.order_index, book.book_id DESC limit ?,?`
+	_, err = o.Raw(sql2, booKId, offset, pageSize).QueryRows(&books)
+	if err != nil {
+		logs.Error("分页查询项目列表 => ", err)
+		return
+	}
+	sql := "SELECT m.account,doc.modify_time FROM md_documents AS doc LEFT JOIN md_members AS m ON doc.modify_at=m.member_id WHERE book_id = ? LIMIT 1 ORDER BY doc.modify_time DESC"
+
+	if err == nil && len(books) > 0 {
+		for index, book := range books {
+			var text struct {
+				Account    string
+				ModifyTime time.Time
+			}
+
+			err1 := o.Raw(sql, book.BookId).QueryRow(&text)
+			if err1 == nil {
+				books[index].LastModifyText = text.Account + " 于 " + text.ModifyTime.Format("2006-01-02 15:04:05")
+			}
+		}
+	}
+	return
+}
+

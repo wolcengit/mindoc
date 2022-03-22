@@ -31,6 +31,9 @@
                         <li><a href="{{urlfor "BookController.Users" ":key" .Model.Identify}}" class="item"><i class="fa fa-user" aria-hidden="true"></i> {{i18n $.Lang "blog.member"}}</a> </li>
                         <li><a href="{{urlfor "BookController.Team" ":key" .Model.Identify}}" class="item"><i class="fa fa-group" aria-hidden="true"></i> {{i18n $.Lang "blog.team"}}</a> </li>
                         <li><a href="{{urlfor "BookController.Setting" ":key" .Model.Identify}}" class="item"><i class="fa fa-gear" aria-hidden="true"></i> {{i18n $.Lang "common.setting"}}</a> </li>
+                        {{if eq .Model.LinkBook 0}}
+                        <li><a href="{{urlfor "BookController.Links" ":key" .Model.Identify}}" class="item"><i class="fa fa-book" aria-hidden="true"></i> 链接</a> </li>
+                        {{end}}
                     {{end}}
                 </ul>
 
@@ -50,9 +53,10 @@
                         <a href="{{urlfor "DocumentController.Edit" ":key" .Model.Identify ":id" ""}}" class="btn btn-default btn-sm pull-right" target="_blank"><i class="fa fa-edit" aria-hidden="true"></i> {{i18n $.Lang "blog.edit"}}</a>
                         {{end}}
                         <a href="{{urlfor "DocumentController.Index" ":key" .Model.Identify}}" class="btn btn-default btn-sm pull-right" style="margin-right: 5px;" target="_blank"><i class="fa fa-eye"></i> {{i18n $.Lang "blog.read"}}</a>
-
+                        {{if eq .Model.LinkBook 0}}
                         {{if eq .Model.RoleId 0 1 2}}
                         <button class="btn btn-default btn-sm pull-right" style="margin-right: 5px;" id="btnRelease"><i class="fa fa-upload" aria-hidden="true"></i> {{i18n $.Lang "blog.publish"}}</button>
+                        {{end}}
                         {{end}}
                     </div>
                 </div>

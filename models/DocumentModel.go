@@ -48,6 +48,8 @@ type Document struct {
 	AttachList []*Attachment `orm:"-" json:"attach"`
 	//i18n
 	Lang string `orm:"-"`
+	// link document id
+	LinkId   int    `orm:"column(link_id);type(int);default(0)" json:"link_id"`
 }
 
 // 多字段唯一键

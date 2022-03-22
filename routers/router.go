@@ -144,6 +144,7 @@ func init() {
 	web.Router("/book/:key/release", &controllers.BookController{}, "post:Release")
 	web.Router("/book/:key/sort", &controllers.BookController{}, "post:SaveSort")
 	web.Router("/book/:key/teams", &controllers.BookController{}, "*:Team")
+	web.Router("/book/:key/link", &controllers.BookController{}, "*:Links")
 
 	web.Router("/book/create", &controllers.BookController{}, "*:Create")
 	web.Router("/book/itemsets/search", &controllers.BookController{}, "*:ItemsetsSearch")
