@@ -1,4 +1,4 @@
-FROM amd64/golang:1.13 AS build
+FROM amd64/golang:1.18.1 AS build
 
 ARG TAG=0.0.1
 
@@ -16,7 +16,7 @@ WORKDIR /go/src/github.com/mindoc-org/mindoc
 # 编译
 RUN go env
 RUN go mod tidy -v
-RUN go build -o mindoc_linux_amd64 -ldflags "-w -s -X 'main.VERSION=$TAG' -X 'main.BUILD_TIME=`date`' -X 'main.GO_VERSION=`go version`'"
+RUN go build -v -o mindoc_linux_amd64 -ldflags "-w -s -X 'main.VERSION=$TAG' -X 'main.BUILD_TIME=`date`' -X 'main.GO_VERSION=`go version`'"
 RUN cp conf/app.conf.example conf/app.conf
 # 清理不需要的文件
 RUN rm appveyor.yml docker-compose.yml Dockerfile .travis.yml .gitattributes .gitignore go.mod go.sum main.go README.md simsun.ttc start.sh conf/*.go
@@ -36,14 +36,25 @@ FROM ubuntu:focal
 # 切换默认shell为bash
 SHELL ["/bin/bash", "-c"]
 
-COPY --from=build /usr/share/fonts/win/simsun.ttc /usr/share/fonts/win/
-COPY --from=build /go/src/github.com/mindoc-org/mindoc /mindoc
 WORKDIR /mindoc
+
+# 文件复制
+COPY --from=build /usr/share/fonts/win/simsun.ttc /usr/share/fonts/win/
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/mindoc_linux_amd64 /mindoc/
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/start.sh /mindoc/
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/LICENSE.md /mindoc/
+# 文件夹复制
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/lib /mindoc/lib
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/conf /mindoc/__default_assets__/conf
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/static /mindoc/__default_assets__/static
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/views /mindoc/__default_assets__/views
+COPY --from=build /go/src/github.com/mindoc-org/mindoc/uploads /mindoc/__default_assets__/uploads
+
 RUN chmod a+r /usr/share/fonts/win/simsun.ttc
 
 # 备份原有源
 RUN mv /etc/apt/sources.list /etc/apt/sources.list-backup
-# 最小化源，缩短apt update时间(ca-certificates必须先安装才支持换tsinghua源)
+# 最小化源，缩短apt update时间(ca-certificates必须先安装才支持换aliyun源)
 RUN echo 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' > /etc/apt/sources.list
 RUN apt-get update
 RUN apt install -y ca-certificates
@@ -77,7 +88,7 @@ RUN apt install -y --no-install-recommends tzdata
 RUN dpkg-reconfigure --frontend noninteractive tzdata
 
 # 安装 calibre 依赖的包
-RUN apt install -y libgl-dev libnss3-dev libxcomposite-dev libxrandr-dev libxi-dev
+RUN apt install -y libgl-dev libnss3-dev libxcomposite-dev libxrandr-dev libxi-dev libxdamage-dev
 # 安装文泉驿字体
 RUN apt install -y fonts-wqy-microhei fonts-wqy-zenhei
 # 安装中文语言包
@@ -88,6 +99,7 @@ RUN update-locale LANG=zh_CN.UTF-8
 ENV LANG=zh_CN.UTF-8
 ENV LANGUAGE=zh_CN:en
 ENV LC_ALL=zh_CN.UTF-8
+
 # 安装-calibre
 # RUN apt-get install -y calibre # 此种方式安装省事，但会安装很多额外不需要的软件包，导致体积过大
 RUN mkdir -p /tmp/calibre-cache
@@ -95,8 +107,9 @@ RUN mkdir -p /tmp/calibre-cache
 RUN curl -s http://code.calibre-ebook.com/latest>/tmp/calibre-cache/version
 # 下载最新版本
 # RUN wget -O /tmp/calibre-cache/calibre-x86_64.txz -c https://download.calibre-ebook.com/`cat /tmp/calibre-cache/version`/calibre-`cat /tmp/calibre-cache/version`-x86_64.txz
-# 使用 download.fastgit.org 替换 github 实现加速
-RUN wget -O /tmp/calibre-cache/calibre-x86_64.txz -c https://download.fastgit.org/kovidgoyal/calibre/releases/download/v`cat /tmp/calibre-cache/version`/calibre-`cat /tmp/calibre-cache/version`-x86_64.txz
+# 使用 ghproxy.com 替换 github 实现加速
+RUN wget -O /tmp/calibre-cache/calibre-x86_64.txz -c https://ghproxy.com/https://github.com/kovidgoyal/calibre/releases/download/v`cat /tmp/calibre-cache/version`/calibre-`cat /tmp/calibre-cache/version`-x86_64.txz
+# RUN wget -O /tmp/calibre-cache/calibre-x86_64.txz -c https://github.com/kovidgoyal/calibre/releases/download/v`cat /tmp/calibre-cache/version`/calibre-`cat /tmp/calibre-cache/version`-x86_64.txz
 # 注: 调试阶段，下载alibre-5.22.1-x86_64.txz到本地(使用 python -m http.server)，加速构建
 # RUN wget -O /tmp/calibre-cache/calibre-x86_64.txz -c http://10.96.8.252:8000/calibre-5.22.1-x86_64.txz
 # 解压
@@ -113,14 +126,10 @@ RUN ebook-convert --version
 RUN rm -rf /tmp/calibre-cache
 
 # refer: https://docs.docker.com/engine/reference/builder/#volume
-# 数据同步目录
-VOLUME /mindoc-sync-host
+VOLUME ["/mindoc/conf","/mindoc/static","/mindoc/views","/mindoc/uploads","/mindoc/runtime","/mindoc/database"]
 
 # refer: https://docs.docker.com/engine/reference/builder/#expose
 EXPOSE 8181/tcp
-
-# 如果配置文件不存在就复制
-RUN cp --no-clobber /mindoc/conf/app.conf.example /mindoc/conf/app.conf
 
 ENV ZONEINFO=/mindoc/lib/time/zoneinfo.zip
 RUN chmod +x /mindoc/start.sh
@@ -128,8 +137,8 @@ RUN chmod +x /mindoc/start.sh
 ENTRYPOINT ["/bin/bash", "/mindoc/start.sh"]
 
 # https://docs.docker.com/engine/reference/commandline/build/#options
-# docker build --progress plain --rm --build-arg TAG=2.0.1 --tag gsw945/mindoc:2.0.1 .
+# docker build --progress plain --rm --build-arg TAG=2.1 --tag gsw945/mindoc:2.1 .
 # https://docs.docker.com/engine/reference/commandline/run/#options
 # set MINDOC=//d/mindoc # windows
 # export MINDOC=/home/ubuntu/mindoc-docker # linux
-# docker run --rm -it  -p 8181:8181 -v "%MINDOC%":"/mindoc-sync-host" --name mindoc -e MINDOC_ENABLE_EXPORT=true -d gsw945/mindoc:2.0.1
+# docker run --rm -it  -p 8181:8181 -v "%MINDOC%":"/mindoc-sync-host" --name mindoc -e MINDOC_ENABLE_EXPORT=true -d gsw945/mindoc:2.1
