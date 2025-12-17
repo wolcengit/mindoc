@@ -36,53 +36,54 @@ var once = sync.Once{}
 type Book struct {
 	BookId int `orm:"pk;auto;unique;column(book_id)" json:"book_id"`
 	// BookName 项目名称.
-	BookName string `orm:"column(book_name);size(500)" json:"book_name"`
+	BookName string `orm:"column(book_name);size(500);description(名称)" json:"book_name"`
 	//所属项目空间
-	ItemId int `orm:"column(item_id);type(int);default(1)" json:"item_id"`
+	ItemId int `orm:"column(item_id);type(int);default(1);description(所属项目空间id)" json:"item_id"`
 	// Identify 项目唯一标识.
-	Identify string `orm:"column(identify);size(100);unique" json:"identify"`
+	Identify string `orm:"column(identify);size(100);unique;description(唯一标识)" json:"identify"`
 	//是否是自动发布 0 否/1 是
-	AutoRelease int `orm:"column(auto_release);type(int);default(0)" json:"auto_release"`
+	AutoRelease int `orm:"column(auto_release);type(int);default(0);description(是否是自动发布 0 否/1 是)" json:"auto_release"`
 	//是否开启下载功能 0 是/1 否
-	IsDownload int `orm:"column(is_download);type(int);default(0)" json:"is_download"`
-	OrderIndex int `orm:"column(order_index);type(int);default(0)" json:"order_index"`
+	IsDownload int `orm:"column(is_download);type(int);default(0);description(是否开启下载功能 0 是/1 否)" json:"is_download"`
+	OrderIndex int `orm:"column(order_index);type(int);default(0);description(排序)" json:"order_index"`
 	// Description 项目描述.
-	Description string `orm:"column(description);size(2000)" json:"description"`
+	Description string `orm:"column(description);size(2000);description(项目描述)" json:"description"`
 	//发行公司
-	Publisher string `orm:"column(publisher);size(500)" json:"publisher"`
-	Label     string `orm:"column(label);size(500)" json:"label"`
+	Publisher string `orm:"column(publisher);size(500);description(发行公司)" json:"publisher"`
+	Label     string `orm:"column(label);size(500);description(所属标签)" json:"label"`
 	// PrivatelyOwned 项目私有： 0 公开/ 1 私有
-	PrivatelyOwned int `orm:"column(privately_owned);type(int);default(0)" json:"privately_owned"`
+	PrivatelyOwned int `orm:"column(privately_owned);type(int);default(0);description(项目私有： 0 公开/ 1 私有)" json:"privately_owned"`
 	// 当项目是私有时的访问Token.
-	PrivateToken string `orm:"column(private_token);size(500);null" json:"private_token"`
+	PrivateToken string `orm:"column(private_token);size(500);null;description(当项目是私有时的访问Token)" json:"private_token"`
 	//访问密码.
-	BookPassword string `orm:"column(book_password);size(500);null" json:"book_password"`
+	BookPassword string `orm:"column(book_password);size(500);null;description(访问密码)" json:"book_password"`
 	//状态：0 正常/1 已删除
-	Status int `orm:"column(status);type(int);default(0)" json:"status"`
+	Status int `orm:"column(status);type(int);default(0);description(状态：0 正常/1 已删除)" json:"status"`
 	//默认的编辑器.
-	Editor string `orm:"column(editor);size(50)" json:"editor"`
+	Editor string `orm:"column(editor);size(50);description(默认的编辑器 markdown/html)" json:"editor"`
 	// DocCount 包含文档数量.
-	DocCount int `orm:"column(doc_count);type(int)" json:"doc_count"`
+	DocCount int `orm:"column(doc_count);type(int);description(包含文档数量)" json:"doc_count"`
 	// CommentStatus 评论设置的状态:open 为允许所有人评论，closed 为不允许评论, group_only 仅允许参与者评论 ,registered_only 仅允许注册者评论.
-	CommentStatus string `orm:"column(comment_status);size(20);default(open)" json:"comment_status"`
-	CommentCount  int    `orm:"column(comment_count);type(int)" json:"comment_count"`
+	CommentStatus string `orm:"column(comment_status);size(20);default(open);description(评论设置的状态:open 为允许所有人评论，closed 为不允许评论, group_only 仅允许参与者评论 ,registered_only 仅允许注册者评论.)" json:"comment_status"`
+	CommentCount  int    `orm:"column(comment_count);type(int);description(评论数量)" json:"comment_count"`
 	//封面地址
-	Cover string `orm:"column(cover);size(1000)" json:"cover"`
+	Cover string `orm:"column(cover);size(1000);description(封面地址)" json:"cover"`
 	//主题风格
-	Theme string `orm:"column(theme);size(255);default(default)" json:"theme"`
+	Theme string `orm:"column(theme);size(255);default(default);description(主题风格)" json:"theme"`
 	// CreateTime 创建时间 .
-	CreateTime time.Time `orm:"type(datetime);column(create_time);auto_now_add" json:"create_time"`
+	CreateTime time.Time `orm:"type(datetime);column(create_time);auto_now_add;description(创建时间)" json:"create_time"`
 	//每个文档保存的历史记录数量，0 为不限制
-	HistoryCount int `orm:"column(history_count);type(int);default(0)" json:"history_count"`
+	HistoryCount int `orm:"column(history_count);type(int);default(0);description(每个文档保存的历史记录数量，0 为不限制)" json:"history_count"`
 	//是否启用分享，0启用/1不启用
-	IsEnableShare int       `orm:"column(is_enable_share);type(int);default(0)" json:"is_enable_share"`
-	MemberId      int       `orm:"column(member_id);size(100)" json:"member_id"`
-	ModifyTime    time.Time `orm:"type(datetime);column(modify_time);null;auto_now" json:"modify_time"`
-	Version       int64     `orm:"type(bigint);column(version)" json:"version"`
+	IsEnableShare int       `orm:"column(is_enable_share);type(int);default(0);description(是否启用分享，0启用/1不启用)" json:"is_enable_share"`
+	MemberId      int       `orm:"column(member_id);size(100);description(作者id)" json:"member_id"`
+	ModifyTime    time.Time `orm:"type(datetime);column(modify_time);null;auto_now;description(修改时间)" json:"modify_time"`
+	Version       int64     `orm:"type(bigint);column(version);description(版本)" json:"version"`
 	//是否使用第一篇文章项目为默认首页,0 否/1 是
-	IsUseFirstDocument int `orm:"column(is_use_first_document);type(int);default(0)" json:"is_use_first_document"`
+	IsUseFirstDocument int `orm:"column(is_use_first_document);type(int);default(0);description(是否使用第一篇文章项目为默认首页,0 否/1 是)" json:"is_use_first_document"`
 	//是否开启自动保存：0 否/1 是
-	AutoSave int `orm:"column(auto_save);type(tinyint);default(0)" json:"auto_save"`
+	AutoSave  int `orm:"column(auto_save);type(tinyint);default(0);description(是否开启自动保存：0 否/1 是)" json:"auto_save"`
+	PrintSate int `orm:"column(print_state);type(tinyint);default(1);description(启用打印：0 否/1 是)" json:"print_state"`
 }
 
 func (book *Book) String() string {
@@ -115,7 +116,7 @@ func NewBook() *Book {
 	return &Book{}
 }
 
-//添加一个项目
+// 添加一个项目
 func (book *Book) Insert(lang string) error {
 	o := orm.NewOrm()
 	//	o.Begin()
@@ -167,7 +168,7 @@ func (book *Book) Find(id int, cols ...string) (*Book, error) {
 	return book, err
 }
 
-//更新一个项目
+// 更新一个项目
 func (book *Book) Update(cols ...string) error {
 	o := orm.NewOrm()
 
@@ -188,7 +189,7 @@ func (book *Book) Update(cols ...string) error {
 	return err
 }
 
-//复制项目
+// 复制项目
 func (book *Book) Copy(identify string) error {
 	o := orm.NewOrm()
 
@@ -290,7 +291,7 @@ func (book *Book) Copy(identify string) error {
 	return nil
 }
 
-//递归的复制文档
+// 递归的复制文档
 func recursiveInsertDocument(docs []*Document, o orm.TxOrmer, bookId int, parentId int) error {
 	for _, doc := range docs {
 
@@ -333,7 +334,7 @@ func recursiveInsertDocument(docs []*Document, o orm.TxOrmer, bookId int, parent
 	return nil
 }
 
-//根据指定字段查询结果集.
+// 根据指定字段查询结果集.
 func (book *Book) FindByField(field string, value interface{}, cols ...string) ([]*Book, error) {
 	o := orm.NewOrm()
 
@@ -343,7 +344,7 @@ func (book *Book) FindByField(field string, value interface{}, cols ...string) (
 	return books, err
 }
 
-//根据指定字段查询一个结果.
+// 根据指定字段查询一个结果.
 func (book *Book) FindByFieldFirst(field string, value interface{}) (*Book, error) {
 	o := orm.NewOrm()
 
@@ -353,7 +354,7 @@ func (book *Book) FindByFieldFirst(field string, value interface{}) (*Book, erro
 
 }
 
-//根据项目标识查询项目
+// 根据项目标识查询项目
 func (book *Book) FindByIdentify(identify string, cols ...string) (*Book, error) {
 	o := orm.NewOrm()
 
@@ -362,7 +363,7 @@ func (book *Book) FindByIdentify(identify string, cols ...string) (*Book, error)
 	return book, err
 }
 
-//分页查询指定用户的项目
+// 分页查询指定用户的项目
 func (book *Book) FindToPager(pageIndex, pageSize, memberId int, lang string) (books []*BookResult, totalCount int, err error) {
 
 	o := orm.NewOrm()
@@ -393,7 +394,7 @@ FROM md_books AS book
 	//	" LEFT JOIN " + relationship.TableNameWithPrefix() + " AS rel ON book.book_id=rel.book_id AND rel.member_id = ?" +
 	//	" LEFT JOIN " + relationship.TableNameWithPrefix() + " AS rel1 ON book.book_id=rel1.book_id  AND rel1.role_id=0" +
 	//	" LEFT JOIN " + NewMember().TableNameWithPrefix() + " AS m ON rel1.member_id=m.member_id " +
-	//	" WHERE rel.relationship_id > 0 ORDER BY book.order_index DESC,book.book_id DESC LIMIT " + fmt.Sprintf("%d,%d", offset, pageSize)
+	//	" WHERE rel.relationship_id > 0 ORDER BY book.order_index DESC,book.book_id DESC LIMIT " + fmt.Sprintf("%d,%d", pageSize, offset)
 
 	sql2 := `SELECT
   book.*,
@@ -410,9 +411,9 @@ FROM md_books AS book
   LEFT JOIN md_relationship AS rel1 ON book.book_id = rel1.book_id AND rel1.role_id = 0
   LEFT JOIN md_members AS m ON rel1.member_id = m.member_id
 WHERE rel.role_id >= 0 or team.role_id >= 0
-ORDER BY book.order_index, book.book_id DESC limit ?,?`
+ORDER BY book.order_index, book.book_id DESC limit ? offset ?`
 
-	_, err = o.Raw(sql2, memberId, memberId, offset, pageSize).QueryRows(&books)
+	_, err = o.Raw(sql2, memberId, memberId, pageSize, offset).QueryRows(&books)
 	if err != nil {
 		logs.Error("分页查询项目列表 => ", err)
 		return
@@ -521,7 +522,7 @@ func (book *Book) ThoroughDeleteBook(id int) error {
 
 }
 
-//分页查找系统首页数据.
+// 分页查找系统首页数据.
 func (book *Book) FindForHomeToPager(pageIndex, pageSize, memberId int) (books []*BookResult, totalCount int, err error) {
 	o := orm.NewOrm()
 
@@ -550,9 +551,9 @@ WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0`
 as t group by book_id) as team on team.book_id=book.book_id
   LEFT JOIN md_relationship AS rel1 ON rel1.book_id = book.book_id AND rel1.role_id = 0
   LEFT JOIN md_members AS mdmb ON rel1.member_id = mdmb.member_id
-WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0 ORDER BY order_index desc,book.book_id DESC LIMIT ?,?`
+WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0 ORDER BY order_index desc,book.book_id DESC limit ? offset ?`
 
-		_, err = o.Raw(sql2, memberId, memberId, offset, pageSize).QueryRows(&books)
+		_, err = o.Raw(sql2, memberId, memberId, pageSize, offset).QueryRows(&books)
 
 	} else {
 		count, err1 := o.QueryTable(book.TableNameWithPrefix()).Filter("privately_owned", 0).Count()
@@ -566,15 +567,15 @@ WHERE book.privately_owned = 0 or rel.role_id >=0 or team.role_id >=0 ORDER BY o
 		sql := `SELECT book.*,rel.*,mdmb.account AS create_name,mdmb.real_name FROM md_books AS book
 			LEFT JOIN md_relationship AS rel ON rel.book_id = book.book_id AND rel.role_id = 0
 			LEFT JOIN md_members AS mdmb ON rel.member_id = mdmb.member_id
-			WHERE book.privately_owned = 0 ORDER BY order_index DESC ,book.book_id DESC LIMIT ?,?`
+			WHERE book.privately_owned = 0 ORDER BY order_index DESC ,book.book_id DESC limit ? offset ?`
 
-		_, err = o.Raw(sql, offset, pageSize).QueryRows(&books)
+		_, err = o.Raw(sql, pageSize, offset).QueryRows(&books)
 
 	}
 	return
 }
 
-//分页全局搜索.
+// 分页全局搜索.
 func (book *Book) FindForLabelToPager(keyword string, pageIndex, pageSize, memberId int) (books []*BookResult, totalCount int, err error) {
 	o := orm.NewOrm()
 
@@ -604,9 +605,9 @@ WHERE (relationship_id > 0 OR book.privately_owned = 0 or team.team_member_id > 
 			LEFT JOIN md_relationship AS rel1 ON rel1.book_id = book.book_id AND rel1.role_id = 0
 			LEFT JOIN md_members AS mdmb ON rel1.member_id = mdmb.member_id
 			WHERE (rel.relationship_id > 0 OR book.privately_owned = 0 or team.team_member_id > 0) 
-			AND book.label LIKE ? ORDER BY order_index DESC ,book.book_id DESC LIMIT ?,?`
+			AND book.label LIKE ? ORDER BY order_index DESC ,book.book_id DESC limit ? offset ?`
 
-		_, err = o.Raw(sql2, memberId, memberId, keyword, offset, pageSize).QueryRows(&books)
+		_, err = o.Raw(sql2, memberId, memberId, keyword, pageSize, offset).QueryRows(&books)
 
 		return
 
@@ -622,9 +623,9 @@ WHERE (relationship_id > 0 OR book.privately_owned = 0 or team.team_member_id > 
 		sql := `SELECT book.*,rel.*,mdmb.account AS create_name FROM md_books AS book
 			LEFT JOIN md_relationship AS rel ON rel.book_id = book.book_id AND rel.role_id = 0
 			LEFT JOIN md_members AS mdmb ON rel.member_id = mdmb.member_id
-			WHERE book.privately_owned = 0 AND book.label LIKE ? ORDER BY order_index DESC ,book.book_id DESC LIMIT ?,?`
+			WHERE book.privately_owned = 0 AND book.label LIKE ? ORDER BY order_index DESC ,book.book_id DESC limit ? offset ?`
 
-		_, err = o.Raw(sql, keyword, offset, pageSize).QueryRows(&books)
+		_, err = o.Raw(sql, keyword, pageSize, offset).QueryRows(&books)
 
 		return
 
@@ -665,7 +666,7 @@ func (book *Book) ReleaseContent(bookId int, lang string) {
 	})
 }
 
-//重置文档数量
+// 重置文档数量
 func (book *Book) ResetDocumentNumber(bookId int) {
 	o := orm.NewOrm()
 
@@ -1037,8 +1038,6 @@ func (book *Book) ImportWordBook(docxPath string, lang string) (err error) {
 	}
 
 	doc.DocumentName = strings.TrimSpace(docName)
-
-	doc.DocumentId = book.MemberId
 
 	if err := doc.InsertOrUpdate("document_name", "book_id", "markdown", "content"); err != nil {
 		logs.Error(doc.DocumentId, err)

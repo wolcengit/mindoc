@@ -1,4 +1,4 @@
-//数据库模型.
+// 数据库模型.
 package models
 
 import (
@@ -12,23 +12,31 @@ import (
 	"github.com/beego/beego/v2/core/logs"
 	"github.com/mindoc-org/mindoc/conf"
 	"github.com/mindoc-org/mindoc/utils/filetil"
+	// "gorm.io/driver/sqlite"
+	// "gorm.io/gorm"
+	// "gorm.io/gorm/logger"
+	// "gorm.io/gorm/schema"
 )
+
+// 定义全局的db对象，我们执行数据库操作主要通过他实现。
+// var _db *gorm.DB
 
 // Attachment struct .
 type Attachment struct {
 	AttachmentId int       `orm:"column(attachment_id);pk;auto;unique" json:"attachment_id"`
-	BookId       int       `orm:"column(book_id);type(int)" json:"book_id"`
-	DocumentId   int       `orm:"column(document_id);type(int);null" json:"doc_id"`
-	FileName     string    `orm:"column(file_name);size(255)" json:"file_name"`
-	FilePath     string    `orm:"column(file_path);size(2000)" json:"file_path"`
-	FileSize     float64   `orm:"column(file_size);type(float)" json:"file_size"`
-	HttpPath     string    `orm:"column(http_path);size(2000)" json:"http_path"`
-	FileExt      string    `orm:"column(file_ext);size(50)" json:"file_ext"`
-	CreateTime   time.Time `orm:"type(datetime);column(create_time);auto_now_add" json:"create_time"`
-	CreateAt     int       `orm:"column(create_at);type(int)" json:"create_at"`
+	BookId       int       `orm:"column(book_id);type(int);description(所属book id)" json:"book_id"`
+	DocumentId   int       `orm:"column(document_id);type(int);null;description(所属文档id)" json:"doc_id"`
+	FileName     string    `orm:"column(file_name);size(255);description(文件名称)" json:"file_name"`
+	FilePath     string    `orm:"column(file_path);size(2000);description(文件路径)" json:"file_path"`
+	FileSize     float64   `orm:"column(file_size);type(float);description(文件大小 字节)" json:"file_size"`
+	HttpPath     string    `orm:"column(http_path);size(2000);description(文件路径)" json:"http_path"`
+	FileExt      string    `orm:"column(file_ext);size(50);description(文件后缀)" json:"file_ext"`
+	CreateTime   time.Time `orm:"type(datetime);column(create_time);auto_now_add;description(创建时间)" json:"create_time"`
+	CreateAt     int       `orm:"column(create_at);type(int);description(创建人id)" json:"create_at"`
+	ResourceType string    `orm:"-" json:"resource_type"`
 }
 
-// TableName 获取对应数据库表名.
+// TableName 获取对应上传附件数据库表名.
 func (m *Attachment) TableName() string {
 	return "attachment"
 }
@@ -83,7 +91,7 @@ func (m *Attachment) Find(id int) (*Attachment, error) {
 	return m, err
 }
 
-//查询指定文档的附件列表
+// 查询指定文档的附件列表
 func (m *Attachment) FindListByDocumentId(docId int) (attaches []*Attachment, err error) {
 	o := orm.NewOrm()
 
@@ -91,7 +99,7 @@ func (m *Attachment) FindListByDocumentId(docId int) (attaches []*Attachment, er
 	return
 }
 
-//分页查询附件
+// 分页查询附件
 func (m *Attachment) FindToPager(pageIndex, pageSize int) (attachList []*AttachmentResult, totalCount int, err error) {
 	o := orm.NewOrm()
 
@@ -102,11 +110,15 @@ func (m *Attachment) FindToPager(pageIndex, pageSize int) (attachList []*Attachm
 		return nil, 0, err
 	}
 	totalCount = int(total)
-	offset := (pageIndex - 1) * pageSize
 
 	var list []*Attachment
 
-	_, err = o.QueryTable(m.TableNameWithPrefix()).OrderBy("-attachment_id").Offset(offset).Limit(pageSize).All(&list)
+	offset := (pageIndex - 1) * pageSize
+	if pageSize == 0 {
+		_, err = o.QueryTable(m.TableNameWithPrefix()).OrderBy("-attachment_id").Offset(offset).Limit(pageSize).All(&list)
+	} else {
+		_, err = o.QueryTable(m.TableNameWithPrefix()).OrderBy("-attachment_id").All(&list)
+	}
 
 	if err != nil {
 		if err == orm.ErrNoRows {
